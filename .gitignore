@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# Build directories
+/build
+
+# Cache directories
+/.cache
+/.direnv
+
+# Other
+imgui.ini
