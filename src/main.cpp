@@ -3,6 +3,7 @@
 #include "core/Project.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
+#include "ui/AssetBrowser.hpp"
 #include "ui/ObjectDetails.hpp"
 #include "ui/ObjectSelectionTree.hpp"
 #include "ui/ShaderUniformPane.hpp"
@@ -89,6 +90,9 @@ int main()
 
     auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = Project::get_current()->get_model(path);
+
+    auto asset_browser = AssetBrowser{};
+
     if (!obj) {
         std::abort();
     }
@@ -147,6 +151,7 @@ int main()
         object_details_pane.render();
         object_selection_tree.render(scene_instance);
         shader_uniform_pane.render();
+        asset_browser.render();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
