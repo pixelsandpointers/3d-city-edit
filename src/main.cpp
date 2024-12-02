@@ -1,19 +1,16 @@
+#include "renderer/Camera.hpp"
+#include "renderer/Model.hpp"
+#include "renderer/Shader.hpp"
+
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
-
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <iostream>
-
-#include "renderer/Camera.hpp"
-#include "renderer/Model.hpp"
-#include "renderer/Shader.hpp"
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -70,7 +67,7 @@ int main()
 
     Camera camera{glm::vec3(0.f, 0.f, -3.f)};
     Model obj{path.string()};
-    Shader shader("src/shader/obj.vert", "src/shader/obj.frag");
+    Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
 
     while (!glfwWindowShouldClose(window)) {
         /* Render here */

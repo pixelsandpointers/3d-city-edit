@@ -1,6 +1,4 @@
-#ifndef MODEL_HPP
-#define MODEL_HPP
-
+#pragma once
 #include "Mesh.hpp"
 
 #include <assimp/Importer.hpp>
@@ -25,7 +23,7 @@ private:
     void load_model(const std::string& path);
     void process_node(aiNode *node, const aiScene *scene);
     Mesh process_mesh(aiMesh *mesh, const aiScene *scene);
-    std::vector<Texture> load_material_textures(aiMaterial *mat, aiTextureType type, std::string typeName);
-};
 
-#endif // MODEL_HPP
+    // TODO - put this into the texture class
+    std::vector<Texture> load_material_textures(aiMaterial *mat, aiTextureType type, std::string type_name);
+};
