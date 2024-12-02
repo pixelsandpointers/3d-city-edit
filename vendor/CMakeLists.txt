@@ -61,12 +61,13 @@ target_link_libraries(3d stb)
 
 find_package(assimp CONFIG)
 if (assimp_FOUND)
-    message("Found assimp locally")
     target_link_libraries(3d assimp::assimp)
 else ()
     FetchContent_Declare(assimp
-            GIT_REPOSITORY https://github.com/assimp/assimp.git
-            GIT_TAG master)
+        GIT_REPOSITORY
+        https://github.com/assimp/assimp.git
+        GIT_TAG v5.4.3
+    )
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
