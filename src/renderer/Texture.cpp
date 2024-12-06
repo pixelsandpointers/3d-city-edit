@@ -1,24 +1,32 @@
-#include "Texture.hpp"
+#include "renderer/Texture.hpp"
 
-unsigned int Texture::load_texture_from_file(char const* path, std::string const& directory)
+#include <iostream>
+
+unsigned int Texture::load_texture_from_file(char const* path)
 {
-    auto filename{std::string(path)};
-    filename = {directory + "/" + filename};
-
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
 
     int width, height, n_components;
-    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &n_components, 0);
+    unsigned char* data = stbi_load(path, &width, &height, &n_components, 0);
 
     if (data) {
         GLenum format{};
-        if (n_components == 1)
+        switch (n_components) {
+        case 1:
             format = GL_RED;
-        else if (n_components == 3)
+            break;
+        case 3:
             format = GL_RGB;
-        else if (n_components == 4)
+            break;
+        case 4:
             format = GL_RGBA;
+            break;
+        default:
+            stbi_image_free(data);
+            glDeleteTextures(1, &texture_id);
+            return 0;
+        }
 
         glBindTexture(GL_TEXTURE_2D, texture_id);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
@@ -31,8 +39,9 @@ unsigned int Texture::load_texture_from_file(char const* path, std::string const
 
         stbi_image_free(data);
     } else {
+        glDeleteTextures(1, &texture_id);
         std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
+        return 0;
     }
 
     return texture_id;

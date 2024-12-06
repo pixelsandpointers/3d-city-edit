@@ -1,4 +1,4 @@
-#include "Mesh.hpp"
+#include "renderer/Mesh.hpp"
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
     : m_vertices(vertices)
@@ -7,6 +7,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 {
     setup_mesh();
 }
+
 void Mesh::draw() const
 {
     glBindVertexArray(m_vao);

@@ -1,4 +1,6 @@
-#include "Model.hpp"
+#include "renderer/Model.hpp"
+
+#include <iostream>
 
 Model::Model(std::string const& path)
 {
@@ -7,7 +9,7 @@ Model::Model(std::string const& path)
 
 void Model::draw() const
 {
-    for (auto &mesh: m_meshes)
+    for (auto& mesh : m_meshes)
         mesh.draw();
 }
 
@@ -20,7 +22,7 @@ void Model::draw(Shader& shader) const
 void Model::load_model(std::string const& path)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    aiScene const* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
         return;
@@ -31,6 +33,7 @@ void Model::load_model(std::string const& path)
     // node processing seems off
     process_node(scene->mRootNode, scene);
 }
+
 void Model::process_node(aiNode* node, aiScene const* scene)
 {
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
@@ -41,6 +44,7 @@ void Model::process_node(aiNode* node, aiScene const* scene)
         process_node(node->mChildren[i], scene);
     }
 }
+
 Mesh Model::process_mesh(aiMesh* mesh, aiScene const* scene)
 {
     std::vector<Vertex> vertices;
@@ -123,8 +127,15 @@ std::vector<Texture> Model::load_material_textures(aiMaterial* mat, aiTextureTyp
         }
 
         if (!skip) {
+            auto texture_path = m_directory + "/" + string.C_Str();
+            auto model_id = Texture::load_texture_from_file(texture_path.c_str());
+            if (model_id == 0) {
+                std::cout << "Loading texture " << texture_path.c_str() << " failed\n";
+                break;
+            }
+
             Texture texture{
-                Texture::load_texture_from_file(string.C_Str(), m_directory),
+                model_id,
                 type_name,
                 string.C_Str()};
 
