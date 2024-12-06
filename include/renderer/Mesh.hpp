@@ -1,18 +1,17 @@
 #pragma once
+
+#include "renderer/Shader.hpp"
+#include "renderer/Texture.hpp"
+
 #include <glm/glm.hpp>
 #include <stb_image.h>
-
 #include <vector>
-
-#include "Shader.hpp"
-#include "Texture.hpp"
 
 struct Vertex {
     glm::vec3 m_position;
     glm::vec3 m_normal;
     glm::vec2 m_tex_coords;
 };
-
 
 class Mesh {
 public:
@@ -21,11 +20,11 @@ public:
     std::vector<Texture> m_textures;
 
     Mesh(std::vector<Vertex> vertices,
-         std::vector<unsigned int> indices,
-         std::vector<Texture> textures);
+        std::vector<unsigned int> indices,
+        std::vector<Texture> textures);
 
     void draw() const;
-    void draw(Shader &shader) const;
+    void draw(Shader& shader) const;
 
 private:
     unsigned int m_vao, m_vbo, m_ebo;
