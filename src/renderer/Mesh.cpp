@@ -1,6 +1,6 @@
 #include "renderer/Mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture*>> textures)
     : m_vertices(vertices)
     , m_indices(indices)
     , m_textures(textures)
@@ -25,7 +25,7 @@ void Mesh::draw(Shader& shader) const
     for (unsigned int i = 0; i < m_textures.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i);
         std::string number;
-        std::string name{m_textures[i].m_type};
+        std::string name = m_textures[i].first;
 
         // allows us to swap between textures
         if (name == "texture_diffuse")
@@ -38,7 +38,7 @@ void Mesh::draw(Shader& shader) const
             number = std::to_string(height_nr++);
 
         glUniform1i(glGetUniformLocation(shader.m_id, (name + number).c_str()), i);
-        glBindTexture(GL_TEXTURE_2D, m_textures[i].m_id);
+        glBindTexture(GL_TEXTURE_2D, m_textures[i].second->m_id);
     }
     // set active
     glBindVertexArray(m_vao);

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-unsigned int Texture::load_texture_from_file(char const* path)
+std::optional<Texture> Texture::load_texture_from_file(char const* path)
 {
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
@@ -25,7 +25,7 @@ unsigned int Texture::load_texture_from_file(char const* path)
         default:
             stbi_image_free(data);
             glDeleteTextures(1, &texture_id);
-            return 0;
+            return {};
         }
 
         glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -41,8 +41,8 @@ unsigned int Texture::load_texture_from_file(char const* path)
     } else {
         glDeleteTextures(1, &texture_id);
         std::cout << "Texture failed to load at path: " << path << std::endl;
-        return 0;
+        return {};
     }
 
-    return texture_id;
+    return Texture{texture_id};
 }
