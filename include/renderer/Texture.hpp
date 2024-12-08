@@ -2,6 +2,7 @@
 
 #include <assimp/scene.h>
 #include <glad/glad.h>
+#include <optional>
 #include <stb_image.h>
 #include <string>
 #include <vector>
@@ -10,9 +11,7 @@
 
 struct Texture {
     unsigned int m_id;
-    std::string m_type;
-    std::string m_path;
 
-    static unsigned int load_texture_from_file(char const* path);
+    static std::optional<Texture> load_texture_from_file(char const* path);
     static std::vector<Texture> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
 };

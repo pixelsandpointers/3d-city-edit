@@ -17,11 +17,11 @@ class Mesh {
 public:
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
-    std::vector<Texture> m_textures;
+    std::vector<std::pair<std::string, Texture*>> m_textures;
 
     Mesh(std::vector<Vertex> vertices,
         std::vector<unsigned int> indices,
-        std::vector<Texture> textures);
+        std::vector<std::pair<std::string, Texture*>> textures);
 
     void draw() const;
     void draw(Shader& shader) const;

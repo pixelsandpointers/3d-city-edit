@@ -1,5 +1,6 @@
 #include "renderer/Model.hpp"
 
+#include "core/AssetManager.hpp"
 #include <iostream>
 
 Model::Model(std::string const& path)
@@ -49,7 +50,7 @@ Mesh Model::process_mesh(aiMesh* mesh, aiScene const* scene)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<Texture> textures;
+    std::vector<std::pair<std::string, Texture*>> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
         Vertex vertex;
@@ -93,55 +94,41 @@ Mesh Model::process_mesh(aiMesh* mesh, aiScene const* scene)
     auto material = scene->mMaterials[mesh->mMaterialIndex];
 
     // diffuse
-    std::vector<Texture> diffuse = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+    auto diffuse = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse");
     textures.insert(textures.end(), diffuse.begin(), diffuse.end());
 
     // specular
-    std::vector<Texture> specular = load_material_textures(material, aiTextureType_SPECULAR, "texture_specular");
+    auto specular = load_material_textures(material, aiTextureType_SPECULAR, "texture_specular");
     textures.insert(textures.end(), specular.begin(), specular.end());
 
     // normals
-    std::vector<Texture> normal = load_material_textures(material, aiTextureType_NORMALS, "texture_normal");
+    auto normal = load_material_textures(material, aiTextureType_NORMALS, "texture_normal");
     textures.insert(textures.end(), normal.begin(), normal.end());
 
     // height map
-    std::vector<Texture> height = load_material_textures(material, aiTextureType_AMBIENT, "texture_height");
+    auto height = load_material_textures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), height.begin(), height.end());
 
     return Mesh{vertices, indices, textures};
 }
 
-std::vector<Texture> Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name)
+std::vector<std::pair<std::string, Texture*>> Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name)
 {
-    std::vector<Texture> textures;
+    std::vector<std::pair<std::string, Texture*>> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); ++i) {
         aiString string;
         mat->GetTexture(type, i, &string);
-        bool skip = false;
-        for (unsigned int j = 0; j < m_textures.size(); ++j) {
-            if (m_textures[j].m_path == string.C_Str()) {
-                textures.push_back(m_textures[j]);
-                skip = true;
-                break;
-            }
+        auto filename = std::string{string.C_Str()};
+        std::replace(filename.begin(), filename.end(), '\\', '/');
+
+        auto texture_path = m_directory + "/" + filename;
+
+        auto texture = AssetManager::get_texture(texture_path);
+        if (!texture) {
+            continue;
         }
 
-        if (!skip) {
-            auto texture_path = m_directory + "/" + string.C_Str();
-            auto model_id = Texture::load_texture_from_file(texture_path.c_str());
-            if (model_id == 0) {
-                std::cout << "Loading texture " << texture_path.c_str() << " failed\n";
-                break;
-            }
-
-            Texture texture{
-                model_id,
-                type_name,
-                string.C_Str()};
-
-            textures.push_back(texture);
-            m_textures.push_back(texture);
-        }
+        textures.push_back(std::make_pair(type_name + std::to_string(i), texture));
     }
     return textures;
 }

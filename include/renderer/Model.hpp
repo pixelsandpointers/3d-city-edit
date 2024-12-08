@@ -10,7 +10,6 @@
 
 class Model {
 public:
-    std::vector<Texture> m_textures;
     std::vector<Mesh> m_meshes;
     std::string m_directory;
 
@@ -24,6 +23,5 @@ private:
     void process_node(aiNode* node, aiScene const* scene);
     Mesh process_mesh(aiMesh* mesh, aiScene const* scene);
 
-    // TODO - put this into the texture class
-    std::vector<Texture> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
+    std::vector<std::pair<std::string, Texture*>> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
 };
