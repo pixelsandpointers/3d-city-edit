@@ -60,21 +60,28 @@ int main()
     ImGui_ImplOpenGL3_Init();
 
     // assuming we set the CWD to root
-    stbi_set_flip_vertically_on_load(true);
     auto path = std::filesystem::current_path();
-    std::cout << path.c_str() << std::endl;
-    path.append("assets/objects/backpack/backpack.obj");
+    std::cout << path.string().c_str() << std::endl;
+    path.append("assets/Models/TUD_Innenstadt.FBX");
 
     Camera camera{glm::vec3(0.f, 0.f, -3.f)};
-    auto obj = AssetManager::get_model(path);
     Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
 
+    auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
     }
 
-    auto obj_instance = obj->instanciate();
-    obj_instance.compute_transforms();
+    auto root_transform = Transform{
+        .position = glm::vec3{0.0f, -18000.0f, -20000.0f},
+        .orientation = glm::vec3{0.0f},
+        .scale = glm::vec3{1.0f},
+    };
+    auto scene = Node::create("scene", root_transform);
+    scene.children.push_back(*obj);
+
+    auto scene_instance = scene.instanciate();
+    scene_instance.compute_transforms();
 
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -84,18 +91,14 @@ int main()
         shader.use();
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 100000.0f);
         glm::mat4 view = camera.get_view_matrix();
         shader.set_mat4("projection", projection);
         shader.set_mat4("view", view);
 
         // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -20.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f)); // it's a bit too big for our scene, so scale it down
-
-        obj_instance.traverse([&](auto transform_matrix, auto const& node) {
-            shader.set_mat4("model", model * transform_matrix);
+        scene_instance.traverse([&](auto transform_matrix, auto const& node) {
+            shader.set_mat4("model", transform_matrix);
             for (auto const& mesh : node.meshes) {
                 mesh.draw(shader);
             }
