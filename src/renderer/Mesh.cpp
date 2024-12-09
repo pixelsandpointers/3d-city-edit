@@ -17,27 +17,9 @@ void Mesh::draw() const
 
 void Mesh::draw(Shader& shader) const
 {
-    unsigned int diffuse_nr = 1;
-    unsigned int specular_nr = 1;
-    unsigned int normal_nr = 1;
-    unsigned int height_nr = 1;
-
     for (unsigned int i = 0; i < m_textures.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i);
-        std::string number;
-        std::string name = m_textures[i].first;
-
-        // allows us to swap between textures
-        if (name == "texture_diffuse")
-            number = std::to_string(diffuse_nr++);
-        else if (name == "texture_specular")
-            number = std::to_string(specular_nr++);
-        else if (name == "texture_normal")
-            number = std::to_string(normal_nr++);
-        else if (name == "texture_height")
-            number = std::to_string(height_nr++);
-
-        glUniform1i(glGetUniformLocation(shader.m_id, (name + number).c_str()), i);
+        glUniform1i(glGetUniformLocation(shader.m_id, m_textures[i].first.c_str()), i);
         glBindTexture(GL_TEXTURE_2D, m_textures[i].second->m_id);
     }
     // set active
