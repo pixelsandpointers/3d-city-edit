@@ -1,5 +1,5 @@
+#include "core/AssetManager.hpp"
 #include "renderer/Camera.hpp"
-#include "renderer/Model.hpp"
 #include "renderer/Shader.hpp"
 
 // clang-format off
@@ -66,8 +66,15 @@ int main()
     path.append("assets/objects/backpack/backpack.obj");
 
     Camera camera{glm::vec3(0.f, 0.f, -3.f)};
-    Model obj{path.string()};
+    auto obj = AssetManager::get_model(path);
     Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
+
+    if (!obj) {
+        std::abort();
+    }
+
+    auto obj_instance = obj->instanciate();
+    obj_instance.compute_transforms();
 
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -86,8 +93,13 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -20.0f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f)); // it's a bit too big for our scene, so scale it down
-        shader.set_mat4("model", model);
-        obj.draw(shader);
+
+        obj_instance.traverse([&](auto transform_matrix, auto const& node) {
+            shader.set_mat4("model", model * transform_matrix);
+            for (auto const& mesh : node.meshes) {
+                mesh.draw(shader);
+            }
+        });
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
