@@ -44,7 +44,7 @@ public:
     Camera(float pos_x, float pos_y, float pos_z, float up_x, float up_y, float up_z, float yaw, float pitch);
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    glm::mat4 get_view_matrix() const;
+    [[nodiscard]] glm::mat4 get_view_matrix() const;
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void process_keyboard(CameraMovement direction, float delta_time);
