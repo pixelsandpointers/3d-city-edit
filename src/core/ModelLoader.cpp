@@ -149,7 +149,12 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
     auto height = load_material_textures(material, aiTextureType_AMBIENT, "texture_height", directory);
     textures.insert(textures.end(), height.begin(), height.end());
 
-    return Mesh{vertices, indices, textures};
+    auto aabb = AABB{
+        .min = ai_to_glm_vec(mesh->mAABB.mMin),
+        .max = ai_to_glm_vec(mesh->mAABB.mMax),
+    };
+
+    return Mesh{vertices, indices, textures, aabb};
 }
 
 Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory)
@@ -181,7 +186,7 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
 std::optional<Node> ModelLoader::load_model(std::filesystem::path path)
 {
     Assimp::Importer importer;
-    aiScene const* scene = importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    aiScene const* scene = importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
         return {};
