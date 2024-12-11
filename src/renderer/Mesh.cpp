@@ -1,9 +1,10 @@
 #include "renderer/Mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture*>> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture*>> textures, AABB aabb)
     : m_vertices(vertices)
     , m_indices(indices)
     , m_textures(textures)
+    , aabb(aabb)
 {
     setup_mesh();
 }
@@ -51,4 +52,12 @@ void Mesh::setup_mesh()
     // vertex texture coords
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_tex_coords));
     glEnableVertexAttribArray(2);
+}
+
+AABB AABB::merge(AABB const& other)
+{
+    return AABB{
+        .min = glm::vec3{std::min(min.x, other.min.x), std::min(min.y, other.min.y), std::min(min.z, other.min.z)},
+        .max = glm::vec3{std::max(max.x, other.max.x), std::max(max.y, other.max.y), std::max(max.z, other.max.z)},
+    };
 }
