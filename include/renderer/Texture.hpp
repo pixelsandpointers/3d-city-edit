@@ -11,6 +11,9 @@
 
 struct Texture {
     unsigned int m_id;
+    int width;
+    int height;
+    int channels;
 
     static std::optional<Texture> load_texture_from_file(char const* path);
     static std::vector<Texture> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);

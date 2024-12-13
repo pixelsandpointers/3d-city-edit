@@ -44,5 +44,10 @@ std::optional<Texture> Texture::load_texture_from_file(char const* path)
         return {};
     }
 
-    return Texture{texture_id};
+    return Texture{
+        .m_id = texture_id,
+        .width = width,
+        .height = height,
+        .channels = n_components,
+    };
 }
