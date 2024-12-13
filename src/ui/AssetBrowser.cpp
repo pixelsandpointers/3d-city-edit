@@ -159,7 +159,25 @@ void AssetBrowser::render()
     } else {
         ImGui::Text("Preview placeholder");
     }
+
+    if (m_selected_item.has_value()) {
+        if (auto* value = std::get_if<Node const*>(&m_selected_item.value()); value != nullptr) {
+            auto node = *value;
+            ImGui::Text("Model node");
+            ImGui::Text("Meshes: %zu", node->meshes.size());
+            ImGui::Text("Direct children: %zu", node->children.size());
+        }
+        if (auto* value = std::get_if<std::filesystem::path>(&m_selected_item.value()); value != nullptr) {
+            auto texture = Project::get_current()->get_texture(*value);
+            if (texture) {
+                ImGui::Text("Filetype: ? Image"); // TODO: Get image format?
+                ImGui::Text("Size: %d x %d", texture->width, texture->height);
+                ImGui::Text("Channels: %d", texture->channels);
+            }
+        }
+    }
     ImGui::EndChild();
+
     ImGui::End();
 }
 
