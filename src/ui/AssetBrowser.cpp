@@ -10,6 +10,14 @@ constexpr auto imgui_color_grey = ImVec4{0.7f, 0.7f, 0.7f, 1.0f};
 constexpr auto imgui_color_light_grey = ImVec4{0.3f, 0.3f, 0.3f, 1.0f};
 constexpr auto imgui_treenode_leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
+bool imgui_treenodeex_with_color(char const* label, int flags, ImVec4 color)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, color);
+    auto open = ImGui::TreeNodeEx(label, flags);
+    ImGui::PopStyleColor(1);
+    return open;
+}
+
 AssetBrowser::AssetBrowser()
 {
     glGenFramebuffers(1, &m_preview_framebuffer.id);
@@ -86,14 +94,12 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
             // TODO: Only use cached model and force loading if open
             auto model = Project::get_current()->get_model(entry.path);
             if (!model) {
-                ImGui::PushStyleColor(ImGuiCol_Text, imgui_color_red);
-                ImGui::TreeNodeEx(entry.path.filename().c_str(), imgui_treenode_leaf_flags);
-                ImGui::PopStyleColor(1);
+                imgui_treenodeex_with_color(entry.path.filename().string().c_str(), imgui_treenode_leaf_flags, imgui_color_red);
                 continue;
             }
 
             int flags = is_selected_item_equal(model) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
-            bool open = ImGui::TreeNodeEx(entry.path.filename().c_str(), flags);
+            bool open = ImGui::TreeNodeEx(entry.path.filename().string().c_str(), flags);
             if (open) {
                 if (ImGui::IsItemClicked()) {
                     m_selected_item = model;
@@ -105,11 +111,13 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
             continue;
         }
 
+        auto color = imgui_color_light_grey;
+        // TODO: Only load texture if necessary
+        if (Project::get_current()->get_texture(entry.path) != nullptr) {
+            color = imgui_color_grey;
+        }
         int flags = is_selected_item_equal(entry.path) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
-
-        ImGui::PushStyleColor(ImGuiCol_Text, imgui_color_light_grey);
-        ImGui::TreeNodeEx(entry.path.filename().c_str(), imgui_treenode_leaf_flags | flags);
-        ImGui::PopStyleColor(1);
+        imgui_treenodeex_with_color(entry.path.filename().string().c_str(), imgui_treenode_leaf_flags | flags, color);
 
         if (ImGui::IsItemClicked()) {
             m_selected_item = entry.path;
@@ -142,7 +150,7 @@ void AssetBrowser::render()
             }
         }
         if (auto* value = std::get_if<std::filesystem::path>(&m_selected_item.value()); value != nullptr) {
-            ImGui::Text("%s", value->filename().c_str());
+            ImGui::Text("%s", value->filename().string().c_str());
             auto texture = Project::get_current()->get_texture(*value);
             if (texture) {
                 ImGui::Image(texture->m_id, ImVec2{static_cast<float>(m_preview_framebuffer.width), static_cast<float>(m_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
