@@ -3,6 +3,8 @@
 #include "core/Project.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
+#include <optional>
+#include <variant>
 
 struct Node;
 
@@ -11,7 +13,13 @@ struct AssetBrowser {
     void render();
 
 private:
-    Node const* m_selected_node{nullptr};
+    /*
+     * The value of `Node const*` must not be nullptr. A `std::reference_wrapper` is not useful here,
+     * because `Node` doesn't implement `operator==` and thus cannot be compared.
+     */
+    using NodeVariantType = std::variant<Node const*, std::filesystem::path>;
+
+    std::optional<NodeVariantType> m_selected_item;
     unsigned int m_preview_texture;
     unsigned int m_preview_depth_rbo;
     bool m_preview_ready{false};
@@ -22,5 +30,6 @@ private:
 
     void traverse_model(Node const&);
     void traverse_directory(FSCacheNode const&);
-    void render_preview();
+    void render_model_preview();
+    bool is_selected_item_equal(NodeVariantType);
 };

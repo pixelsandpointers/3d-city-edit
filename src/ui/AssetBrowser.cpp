@@ -8,6 +8,7 @@
 constexpr auto imgui_color_red = ImVec4{1.0f, 0.0f, 0.0f, 1.0f};
 constexpr auto imgui_color_grey = ImVec4{0.7f, 0.7f, 0.7f, 1.0f};
 constexpr auto imgui_color_light_grey = ImVec4{0.3f, 0.3f, 0.3f, 1.0f};
+constexpr auto imgui_treenode_leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 AssetBrowser::AssetBrowser()
 {
@@ -44,17 +45,17 @@ void AssetBrowser::traverse_model(Node const& node)
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
 
-        auto flags = &child == m_selected_node ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
+        int flags = is_selected_item_equal(&child) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
         bool open = false;
 
         if (!child.children.empty()) {
             open = ImGui::TreeNodeEx(child.name.c_str(), flags);
         } else {
-            ImGui::TreeNodeEx(child.name.c_str(), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+            ImGui::TreeNodeEx(child.name.c_str(), flags | imgui_treenode_leaf_flags);
         }
 
         if (ImGui::IsItemClicked()) {
-            m_selected_node = &child;
+            m_selected_item = &child;
         }
 
         if (open) {
@@ -82,14 +83,20 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
         }
 
         if (entry.type == FSCacheNode::Type::MODEL) {
-            bool open = ImGui::TreeNodeEx(entry.path.filename().string().c_str());
+            // TODO: Only use cached model and force loading if open
+            auto model = Project::get_current()->get_model(entry.path);
+            if (!model) {
+                ImGui::PushStyleColor(ImGuiCol_Text, imgui_color_red);
+                ImGui::TreeNodeEx(entry.path.filename().c_str(), imgui_treenode_leaf_flags);
+                ImGui::PopStyleColor(1);
+                continue;
+            }
+
+            int flags = is_selected_item_equal(model) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
+            bool open = ImGui::TreeNodeEx(entry.path.filename().c_str(), flags);
             if (open) {
-                auto model = Project::get_current()->get_model(entry.path);
-                if (!model) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, imgui_color_red);
-                    ImGui::TreeNodeEx(entry.path.filename().string().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                    ImGui::PopStyleColor(1);
-                    continue;
+                if (ImGui::IsItemClicked()) {
+                    m_selected_item = model;
                 }
 
                 traverse_model(*model);
@@ -98,9 +105,15 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
             continue;
         }
 
+        int flags = is_selected_item_equal(entry.path) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
+
         ImGui::PushStyleColor(ImGuiCol_Text, imgui_color_light_grey);
-        ImGui::TreeNodeEx(entry.path.filename().string().c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+        ImGui::TreeNodeEx(entry.path.filename().c_str(), imgui_treenode_leaf_flags | flags);
         ImGui::PopStyleColor(1);
+
+        if (ImGui::IsItemClicked()) {
+            m_selected_item = entry.path;
+        }
     }
 }
 
@@ -119,12 +132,21 @@ void AssetBrowser::render()
     ImGui::SameLine();
 
     ImGui::BeginChild("preview");
-    if (m_selected_node) {
-        ImGui::Text("%s", m_selected_node->name.c_str());
-        // TODO: Don't re-render the preview every frame
-        render_preview();
-        if (m_preview_ready) {
-            ImGui::Image(m_preview_texture, ImVec2{static_cast<float>(m_preview_framebuffer.width), static_cast<float>(m_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+    if (m_selected_item.has_value()) {
+        if (auto* value = std::get_if<Node const*>(&m_selected_item.value()); value != nullptr) {
+            ImGui::Text("%s", (*value)->name.c_str());
+            // TODO: Don't re-render the preview every frame
+            render_model_preview();
+            if (m_preview_ready) {
+                ImGui::Image(m_preview_texture, ImVec2{static_cast<float>(m_preview_framebuffer.width), static_cast<float>(m_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+            }
+        }
+        if (auto* value = std::get_if<std::filesystem::path>(&m_selected_item.value()); value != nullptr) {
+            ImGui::Text("%s", value->filename().c_str());
+            auto texture = Project::get_current()->get_texture(*value);
+            if (texture) {
+                ImGui::Image(texture->m_id, ImVec2{static_cast<float>(m_preview_framebuffer.width), static_cast<float>(m_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+            }
         }
     } else {
         ImGui::Text("Preview placeholder");
@@ -133,11 +155,13 @@ void AssetBrowser::render()
     ImGui::End();
 }
 
-void AssetBrowser::render_preview()
+void AssetBrowser::render_model_preview()
 {
-    if (!m_selected_node || m_preview_framebuffer.id == 0) {
+    if (!m_selected_item.has_value() || !std::holds_alternative<Node const*>(m_selected_item.value()) || m_preview_framebuffer.id == 0) {
         return;
     }
+
+    auto selected_node = std::get<Node const*>(m_selected_item.value());
 
     // Compute AABB
     AABB aabb{
@@ -145,7 +169,7 @@ void AssetBrowser::render_preview()
         .max = glm::vec3{-std::numeric_limits<float>::max()},
     };
 
-    auto instance = m_selected_node->instanciate();
+    auto instance = selected_node->instanciate();
     instance.compute_transforms();
 
     instance.traverse([&](glm::mat4 transform_matrix, Node const& node) {
@@ -174,4 +198,21 @@ void AssetBrowser::render_preview()
     m_preview_ready = true;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+bool AssetBrowser::is_selected_item_equal(NodeVariantType to_compare)
+{
+    if (!m_selected_item.has_value()) {
+        return false;
+    }
+
+    if (std::holds_alternative<Node const*>(m_selected_item.value()) && std::holds_alternative<Node const*>(to_compare)) {
+        return std::get<Node const*>(m_selected_item.value()) == std::get<Node const*>(to_compare);
+    }
+
+    if (std::holds_alternative<std::filesystem::path>(m_selected_item.value()) && std::holds_alternative<std::filesystem::path>(to_compare)) {
+        return std::get<std::filesystem::path>(m_selected_item.value()) == std::get<std::filesystem::path>(to_compare);
+    }
+
+    return false;
 }
