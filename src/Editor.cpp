@@ -54,7 +54,7 @@ bool Editor::init()
         }
     });
 
-    glfwSetKeyCallback(m_window,[](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         if (auto editor = static_cast<Editor*>(glfwGetWindowUserPointer(window))) {
             Event event{EventType::KEY_PRESS};
             event.key_event.key_code = key;
@@ -69,15 +69,18 @@ bool Editor::init()
 
     return true;
 }
+
 void Editor::run()
 {
     render();
 }
+
 void Editor::shutdown() const
 {
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
+
 void Editor::setup_imgui() const
 {
     // Setup Dear ImGui context
@@ -91,6 +94,7 @@ void Editor::setup_imgui() const
     ImGui_ImplGlfw_InitForOpenGL(m_window, true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
     ImGui_ImplOpenGL3_Init();
 }
+
 void Editor::render()
 {
     // additional setup

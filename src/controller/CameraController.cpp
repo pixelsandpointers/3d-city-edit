@@ -32,8 +32,7 @@ void CameraController::on_key_press(Action const action, float const delta) cons
     glm::vec3 front = {
         cos(glm::radians(m_camera.m_yaw)) * cos(glm::radians(m_camera.m_pitch)),
         sin(glm::radians(m_camera.m_pitch)),
-        sin(glm::radians(m_camera.m_yaw)) * cos(glm::radians(m_camera.m_pitch))
-    };
+        sin(glm::radians(m_camera.m_yaw)) * cos(glm::radians(m_camera.m_pitch))};
     front = glm::normalize(front);
 
     constexpr glm::vec3 up{0.f, 1.f, 0.f};
@@ -78,7 +77,7 @@ void CameraController::setup_event_handlers(EventDispatcher& dispatcher) const
         on_mouse_scroll(event.mouse_scroll_event.yoffset);
     });
 
-    dispatcher.register_handler(EventType::KEY_PRESS, [this](const Event& event) {
+    dispatcher.register_handler(EventType::KEY_PRESS, [this](Event const& event) {
         switch (event.key_event.key_code) {
         case GLFW_KEY_W:
             on_key_press(Action::MOVE_UP, event.time_delta);
