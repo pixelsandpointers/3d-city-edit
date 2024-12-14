@@ -1,12 +1,10 @@
 #include "core/AssetManager.hpp"
+#include "core/CameraController.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
 
-// clang-format off
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-// clang-format on
 #include <filesystem>
+#include <glfw.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -64,16 +62,20 @@ int main()
     std::cout << path.string().c_str() << std::endl;
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
-    Camera camera{glm::vec3(0.f, 0.f, -3.f)};
-    Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
-
+    auto camera_controller = CameraController{window, CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
     }
+    Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
+    Framebuffer framebuffer{
+        .id = 0,
+        .width = window_width,
+        .height = window_height,
+    };
 
     auto root_transform = Transform{
-        .position = glm::vec3{0.0f, -18000.0f, -20000.0f},
+        .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
         .orientation = glm::vec3{0.0f},
         .scale = glm::vec3{1.0f},
     };
@@ -82,27 +84,20 @@ int main()
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
+    auto last_frame = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
+        auto current_frame = glfwGetTime();
+        auto delta_time = current_frame - last_frame;
+        last_frame = current_frame;
+
+        camera_controller.update(delta_time);
+
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        shader.use();
-
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 100000.0f);
-        glm::mat4 view = camera.get_view_matrix();
-        shader.set_mat4("projection", projection);
-        shader.set_mat4("view", view);
-
-        // render the loaded model
-        scene_instance.traverse([&](auto transform_matrix, auto const& node) {
-            shader.set_mat4("model", transform_matrix);
-            for (auto const& mesh : node.meshes) {
-                mesh.draw(shader);
-            }
-        });
+        camera_controller.camera->draw(shader, framebuffer, scene_instance);
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
