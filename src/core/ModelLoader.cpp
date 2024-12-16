@@ -15,6 +15,48 @@ glm::vec3 ai_to_glm_vec(aiVector3D vector)
     return glm::vec3{vector.x, vector.y, vector.z};
 }
 
+/*
+ * Some texture paths in the given model are incorrect. This function makes some guesses
+ * that correct most of them.
+ */
+std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path directory, std::string texture_path_string)
+{
+    std::replace(texture_path_string.begin(), texture_path_string.end(), '\\', '/');
+    auto texture_path = std::filesystem::path{texture_path_string};
+
+    // 1. Attempt: maybe the provided path is correct.
+    if (std::filesystem::exists(directory / texture_path)) {
+        return directory / texture_path;
+    }
+
+    // 2. Attempt: maybe the file is in a subdirectory.
+    auto search_in_subdirectory = [&](std::string filename) -> std::optional<std::filesystem::path> {
+        for (auto const& entry : std::filesystem::directory_iterator{directory}) {
+            if (std::filesystem::exists(entry.path() / filename)) {
+                return entry.path() / filename;
+            }
+        }
+        return {};
+    };
+
+    auto filename = texture_path.filename().string();
+    if (auto optional_path = search_in_subdirectory(filename); optional_path.has_value()) {
+        return optional_path.value();
+    }
+
+    // 3. Attempt: maybe the file is in a subdirectory and it ends on '..bmp', but the file ends on '_.bmp' (wtf?).
+    if (filename.ends_with("..bmp")) {
+        filename.erase(filename.size() - 5);
+        filename += "_.bmp";
+        if (auto optional_path = search_in_subdirectory(filename); optional_path.has_value()) {
+            return optional_path.value();
+        }
+    }
+
+    // Fail
+    return {};
+}
+
 std::vector<std::pair<std::string, Texture*>> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name, std::filesystem::path directory)
 {
     std::vector<std::pair<std::string, Texture*>> textures;
@@ -22,11 +64,14 @@ std::vector<std::pair<std::string, Texture*>> load_material_textures(aiMaterial*
         aiString string;
         mat->GetTexture(type, i, &string);
         auto filename = std::string{string.C_Str()};
-        std::replace(filename.begin(), filename.end(), '\\', '/');
 
-        auto texture_path = directory / filename;
+        auto texture_path = guess_texture_path(directory, filename);
+        if (!texture_path.has_value()) {
+            std::cout << "Failed to guess path for bogus texture name '" << filename << "'\n";
+            continue;
+        }
 
-        auto texture = AssetManager::get_texture(texture_path);
+        auto texture = AssetManager::get_texture(texture_path.value());
         if (!texture) {
             continue;
         }
