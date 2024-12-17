@@ -1,10 +1,10 @@
 #include "core/CameraController.hpp"
 
+#include "core/Input.hpp"
 #include <glm/ext/scalar_constants.hpp>
 
-CameraController::CameraController(GLFWwindow* window, Type type, glm::vec3 camera_position)
+CameraController::CameraController(Type type, glm::vec3 camera_position)
     : type(type)
-    , window(window)
 {
     auto direction = glm::vec3{0.0f, 0.0f, -1.0f};
     camera = std::make_unique<Camera>(camera_position, camera_position + direction);
@@ -12,8 +12,6 @@ CameraController::CameraController(GLFWwindow* window, Type type, glm::vec3 came
 
 void CameraController::update(float delta_time)
 {
-    update_input();
-
     switch (type) {
     case Type::FREECAM:
         update_freecam(delta_time);
@@ -50,31 +48,33 @@ void CameraController::update_freecam(float delta_time)
     // Movement
     auto movement_scalar = speed * delta_time;
 
-    if (key_pressed(GLFW_KEY_W)) {
+    if (Input::key_pressed(GLFW_KEY_W)) {
         camera->position += forward * movement_scalar;
     }
-    if (key_pressed(GLFW_KEY_S)) {
+    if (Input::key_pressed(GLFW_KEY_S)) {
         camera->position -= forward * movement_scalar;
     }
-    if (key_pressed(GLFW_KEY_D)) {
+    if (Input::key_pressed(GLFW_KEY_D)) {
         camera->position += right * movement_scalar;
     }
-    if (key_pressed(GLFW_KEY_A)) {
+    if (Input::key_pressed(GLFW_KEY_A)) {
         camera->position -= right * movement_scalar;
     }
-    if (key_pressed(GLFW_KEY_SPACE)) {
+    if (Input::key_pressed(GLFW_KEY_SPACE)) {
         camera->position += camera_up * movement_scalar;
     }
-    if (key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+    if (Input::key_pressed(GLFW_KEY_LEFT_SHIFT)) {
         camera->position -= camera_up * movement_scalar;
     }
 
     // Look
     auto [yaw, pitch] = direction_to_yaw_pitch(forward);
 
-    auto look_scalar = look_sensitivity * delta_time;
-    pitch -= m_cursor_delta.y * look_scalar;
-    yaw += m_cursor_delta.x * look_scalar;
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
+        auto look_scalar = look_sensitivity * delta_time;
+        pitch -= Input::cursor_delta().y * look_scalar;
+        yaw += Input::cursor_delta().x * look_scalar;
+    }
 
     auto const max_pitch = glm::half_pi<float>() - 0.001f;
     pitch = std::clamp(pitch, -max_pitch, max_pitch);
@@ -85,17 +85,4 @@ void CameraController::update_freecam(float delta_time)
 void CameraController::update_orbit(float delta_time)
 {
     // TODO: Implement orbit controller
-}
-
-void CameraController::update_input()
-{
-    glm::dvec2 cursor_position;
-    glfwGetCursorPos(window, &cursor_position.x, &cursor_position.y);
-    m_cursor_delta = cursor_position - m_last_cursor_position;
-    m_last_cursor_position = cursor_position;
-}
-
-bool CameraController::key_pressed(int key)
-{
-    return glfwGetKey(window, key) == GLFW_PRESS;
 }

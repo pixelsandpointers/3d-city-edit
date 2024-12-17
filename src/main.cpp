@@ -1,5 +1,6 @@
 #include "core/AssetManager.hpp"
 #include "core/CameraController.hpp"
+#include "core/Input.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
 
@@ -57,12 +58,14 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
     ImGui_ImplOpenGL3_Init();
 
+    Input::init(window);
+
     // assuming we set the CWD to root
     auto path = std::filesystem::current_path();
     std::cout << path.string().c_str() << std::endl;
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
-    auto camera_controller = CameraController{window, CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
+    auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
@@ -91,6 +94,8 @@ int main()
         auto delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
+        Input::update();
+
         camera_controller.update(delta_time);
 
         /* Render here */
@@ -107,6 +112,8 @@ int main()
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        Input::late_update();
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
