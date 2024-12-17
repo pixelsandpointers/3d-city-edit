@@ -15,10 +15,12 @@ struct CameraController {
     std::unique_ptr<Camera> camera;
 
     // Movement speed in distance / second
-    float speed{1000.0f};
+    float movement_speed{1000.0f};
 
     // Mouse sensitivity for looking around in radians / second
-    float look_sensitivity{0.2f};
+    float rotation_speed{0.2f};
+
+    float zoom_speed{1.0f};
 
     void update(float delta_time);
 
