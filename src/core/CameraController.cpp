@@ -46,7 +46,7 @@ void CameraController::update_freecam(float delta_time)
     auto camera_up = glm::cross(right, forward);
 
     // Movement
-    auto movement_scalar = speed * delta_time;
+    auto movement_scalar = movement_speed * delta_time;
 
     if (Input::key_pressed(GLFW_KEY_W)) {
         camera->position += forward * movement_scalar;
@@ -71,7 +71,7 @@ void CameraController::update_freecam(float delta_time)
     auto [yaw, pitch] = direction_to_yaw_pitch(forward);
 
     if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
-        auto look_scalar = look_sensitivity * delta_time;
+        auto look_scalar = rotation_speed * delta_time;
         pitch -= Input::cursor_delta().y * look_scalar;
         yaw += Input::cursor_delta().x * look_scalar;
     }
@@ -82,7 +82,49 @@ void CameraController::update_freecam(float delta_time)
     camera->target = camera->position + yaw_pitch_to_direction(yaw, pitch);
 }
 
+// Turntable orbit (y axis keeps pointing up) with blender controls
 void CameraController::update_orbit(float delta_time)
 {
-    // TODO: Implement orbit controller
+    // As viewed by the target torwards the camera
+    auto forward = camera->position - camera->target;
+    auto forward_normalized = glm::normalize(forward);
+    auto right = glm::normalize(glm::cross(forward_normalized, camera->up));
+
+    // Panning
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && Input::key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+        auto panning_scalar = movement_speed * delta_time;
+
+        auto screen_up = glm::cross(forward_normalized, right);
+        camera->position -= screen_up * glm::vec3(Input::cursor_delta().y * panning_scalar);
+        camera->target -= screen_up * glm::vec3(Input::cursor_delta().y * panning_scalar);
+
+        camera->position += right * glm::vec3(Input::cursor_delta().x * panning_scalar);
+        camera->target += right * glm::vec3(Input::cursor_delta().x * panning_scalar);
+    }
+
+    // Rotation
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE) && !Input::key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+        auto rotation_scalar = rotation_speed * delta_time;
+
+        auto [yaw, pitch] = direction_to_yaw_pitch(forward_normalized);
+        yaw += Input::cursor_delta().x * rotation_scalar;
+        pitch += Input::cursor_delta().y * rotation_scalar;
+
+        auto const max_pitch = glm::half_pi<float>() - 0.001f;
+        pitch = std::clamp(pitch, -max_pitch, max_pitch);
+
+        camera->position = camera->target + yaw_pitch_to_direction(yaw, pitch) * glm::vec3{glm::length(forward)};
+    }
+
+    // Zoom
+    auto scroll_y = static_cast<float>(Input::scroll_delta().y);
+    if (scroll_y != 0.0) {
+        auto zoom_step = zoom_speed * std::sqrt(glm::length(forward)) * -scroll_y;
+        auto min_distance = 1.0f;
+        auto camera_distance = std::abs(glm::distance(camera->position, camera->target));
+        if (camera_distance + zoom_step < min_distance) {
+            zoom_step = camera_distance - min_distance;
+        }
+        camera->position += forward_normalized * glm::vec3{zoom_step};
+    }
 }
