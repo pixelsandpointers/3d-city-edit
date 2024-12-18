@@ -34,6 +34,7 @@ Node Node::create(std::string name, Transform t)
 InstancedNode Node::instanciate() const
 {
     InstancedNode new_node{
+        .transform = transform,
         .node = this,
         .model_matrix = glm::mat4{},
         .children = {},
@@ -56,7 +57,7 @@ void InstancedNode::traverse(std::function<void(glm::mat4, Node const&)> f) cons
 
 void InstancedNode::compute_transforms(glm::mat4 parent_transform)
 {
-    model_matrix = parent_transform * node->transform.get_local_matrix();
+    model_matrix = parent_transform * transform.get_local_matrix();
     for (auto& child : children) {
         child.compute_transforms(model_matrix);
     }
