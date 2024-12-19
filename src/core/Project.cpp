@@ -3,6 +3,44 @@
 #include "core/ModelLoader.hpp"
 #include <iostream>
 
+bool path_starts_with(std::filesystem::path path, std::filesystem::path prefix)
+{
+    std::filesystem::path::iterator path_iterator = path.begin();
+    std::filesystem::path::iterator path_iterator_end = path.end();
+    std::filesystem::path::iterator prefix_iterator = prefix.begin();
+    std::filesystem::path::iterator prefix_iterator_end = prefix.end();
+
+    while (path_iterator != path_iterator_end && prefix_iterator != prefix_iterator_end) {
+        if (*path_iterator != *prefix_iterator) {
+            return false;
+        }
+
+        ++path_iterator;
+        ++prefix_iterator;
+    }
+
+    if (prefix_iterator != prefix_iterator_end) {
+        return false;
+    }
+
+    return true;
+}
+
+FSCacheNode* FSCacheNode::get_child(std::filesystem::path full_path)
+{
+    if (!path_starts_with(full_path, path)) {
+        return nullptr;
+    }
+
+    for (auto& child : children) {
+        if (auto* found_node = child.get_child(full_path); found_node && found_node->path == full_path) {
+            return found_node;
+        }
+    }
+
+    return this;
+}
+
 std::unique_ptr<Project> Project::current;
 
 Project* Project::get_current()
@@ -25,6 +63,15 @@ Project::Project(std::filesystem::path root)
 FSCacheNode* Project::get_fs_cache()
 {
     return m_fs_cache.get();
+}
+
+FSCacheNode* Project::get_fs_cache(std::filesystem::path path)
+{
+    if (!m_fs_cache) {
+        return nullptr;
+    }
+
+    return m_fs_cache->get_child(path);
 }
 
 Texture* Project::get_texture(std::filesystem::path path)
@@ -65,6 +112,20 @@ Node* Project::get_model(std::filesystem::path path)
 
     m_models.emplace(path, new_model.value());
     return &m_models.at(path);
+}
+
+Node* Project::get_cached_model(std::filesystem::path path)
+{
+    if (!path.is_absolute()) {
+        std::cout << "path " << path << " is not absolute";
+        return nullptr;
+    }
+
+    if (m_models.contains(path)) {
+        return &m_models.at(path);
+    }
+
+    return nullptr;
 }
 
 bool case_insensitive_equals(std::string_view a_insensitive, std::string_view b_lower)
