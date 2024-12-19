@@ -17,6 +17,8 @@ struct FSCacheNode {
     std::filesystem::file_time_type mtime;
     Type type;
     std::vector<FSCacheNode> children;
+
+    FSCacheNode* get_child(std::filesystem::path);
 };
 
 class Project {
@@ -27,8 +29,10 @@ public:
     static void load(std::filesystem::path);
 
     FSCacheNode* get_fs_cache();
+    FSCacheNode* get_fs_cache(std::filesystem::path);
     Texture* get_texture(std::filesystem::path);
     Node* get_model(std::filesystem::path);
+    Node* get_cached_model(std::filesystem::path);
     void rebuild_fs_cache();
     void rebuild_fs_cache_timed(double current_time);
 
