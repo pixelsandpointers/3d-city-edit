@@ -3,6 +3,7 @@
 #include "core/Input.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
+#include "ui/ObjectDetails.hpp"
 
 #include <filesystem>
 #include <glfw.h>
@@ -147,7 +148,9 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow(); // Show demo window! :)
+        // ImGui::ShowDemoWindow(); // Show demo window! :)
+
+        object_details_pane.render();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
