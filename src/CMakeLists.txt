@@ -4,3 +4,4 @@ target_sources(3d PRIVATE
 
 add_subdirectory(core)
 add_subdirectory(renderer)
+add_subdirectory(ui)

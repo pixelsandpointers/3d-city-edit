@@ -8,6 +8,7 @@ std::unordered_map<std::filesystem::path, Node> AssetManager::models;
 
 Texture* AssetManager::get_texture(std::filesystem::path path)
 {
+    return nullptr;
     if (!path.is_absolute()) {
         std::cout << "path " << path << " is not absolute";
         return nullptr;
