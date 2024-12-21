@@ -4,6 +4,7 @@
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
 #include "ui/ObjectDetails.hpp"
+#include "ui/ObjectSelectionTree.hpp"
 
 #include <filesystem>
 #include <glfw.h>
@@ -78,6 +79,9 @@ int main()
     std::cout << path.string().c_str() << std::endl;
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
+    ObjectDetails object_details_pane = ObjectDetails{};
+    ObjectSelectionTree object_selection_tree = ObjectSelectionTree{};
+
     auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = AssetManager::get_model(path);
     if (!obj) {
@@ -151,6 +155,7 @@ int main()
         // ImGui::ShowDemoWindow(); // Show demo window! :)
 
         object_details_pane.render();
+        object_selection_tree.render(scene_instance);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

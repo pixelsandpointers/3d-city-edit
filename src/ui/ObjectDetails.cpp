@@ -60,6 +60,5 @@ void ObjectDetails::render() {
         // add callback
 
     }
-
     ImGui::End();
 }
