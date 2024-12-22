@@ -11,9 +11,21 @@
 #include <imgui_impl_opengl3.h>
 #include <iostream>
 
+Framebuffer framebuffer{
+    .id = 0,
+    .width = 640,
+    .height = 480,
+};
+
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
     std::cout << "glfw error: " << description << "\n";
+}
+
+void glfw_window_size_callback(GLFWwindow*, int width, int height)
+{
+    framebuffer.width = width;
+    framebuffer.height = height;
 }
 
 int main()
@@ -30,15 +42,14 @@ int main()
     glfwWindowHintString(GLFW_X11_CLASS_NAME, "3d");
     glfwWindowHintString(GLFW_WAYLAND_APP_ID, "3d");
 
-    constexpr int window_width = 640;
-    constexpr int window_height = 480;
-
-    auto* window = glfwCreateWindow(window_width, window_height, "Hello World", nullptr, nullptr);
+    auto* window = glfwCreateWindow(framebuffer.width, framebuffer.height, "Hello World", nullptr, nullptr);
     if (!window) {
         std::cout << "glfwCreateWindow() failed\n";
         glfwTerminate();
         return -1;
     }
+
+    glfwSetWindowSizeCallback(window, glfw_window_size_callback);
 
     glfwMakeContextCurrent(window);
 
@@ -71,11 +82,6 @@ int main()
         std::abort();
     }
     Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
-    Framebuffer framebuffer{
-        .id = 0,
-        .width = window_width,
-        .height = window_height,
-    };
 
     auto root_transform = Transform{
         .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
