@@ -17,13 +17,14 @@ public:
     glm::vec3 position;
     glm::vec3 target;
     glm::vec3 up{0.0f, 1.0f, 0.0f};
-    float far;
+    float near{100.0f};
+    float far{100000.0f};
 
     // Vertical FOV in radians
     float fov;
 
     // constructor with vectors
-    Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f), float far = 100000.0f);
+    Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f));
 
     void draw(Shader&, Framebuffer const&, InstancedNode const&);
 };

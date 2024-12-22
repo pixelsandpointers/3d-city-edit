@@ -1,9 +1,8 @@
 #include "renderer/Camera.hpp"
 
-Camera::Camera(glm::vec3 position, glm::vec3 target, float fov, float far)
+Camera::Camera(glm::vec3 position, glm::vec3 target, float fov)
     : position(position)
     , target(target)
-    , far(far)
     , fov(fov)
 {
 }
@@ -15,7 +14,7 @@ void Camera::draw(Shader& shader, Framebuffer const& framebuffer, InstancedNode 
     glViewport(0, 0, framebuffer.width, framebuffer.height);
 
     auto aspect = static_cast<float>(framebuffer.width) / static_cast<float>(framebuffer.height);
-    glm::mat4 projection = glm::perspective(fov, aspect, 0.1f, far);
+    glm::mat4 projection = glm::perspective(fov, aspect, near, far);
     auto view = glm::lookAt(position, target, up);
 
     shader.set_mat4("projection", projection);
