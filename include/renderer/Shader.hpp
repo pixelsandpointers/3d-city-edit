@@ -13,6 +13,7 @@
  * utilized to achieve different visual effects during the rendering process.
  *
  * @details The available shading types include:
+ *   - ALBEDO_SHADING: Only assigns the texture color to the polygon.
  *   - FLAT_SHADING: A shading technique where a single color is applied per polygon.
  *   - PHONG_SHADING: A method where colors are interpolated based on vertex normals,
  *     providing smooth shading across surfaces.
@@ -23,6 +24,7 @@
  * pipeline in rendering engines, influencing the appearance of graphical objects.
  */
 enum class ShadingType {
+    ALBEDO_SHADING,
     FLAT_SHADING,
     PHONG_SHADING,
     BLINN_PHONG_SHADING,
@@ -49,52 +51,125 @@ struct ShaderSource {
 };
 
 /**
- * @brief Defines an array of shader source data for various shading techniques.
+ * @brief Collection of shader sources for different shading techniques.
  *
- * The `shader_sources` array contains shader source code for different shading types,
- * including Flat Shading, Phong Shading, and Blinn-Phong Shading. Each shading type is
- * represented as a pair of vertex and fragment shader source strings, encapsulated
- * along with its shading type identifier.
+ * The `shader_sources` is a constant array containing the GLSL vertex and fragment shader
+ * source codes for various shading techniques. Each entry in the array corresponds to a
+ * particular `ShadingType` and provides a pair of strings: the vertex shader source and
+ * the matching fragment shader source. These shaders define the behavior of the rendering
+ * pipeline when a specific shading technique is used.
  *
- * @details The available shading types and their corresponding shader source codes:
- *   - Flat Shading:
- *     - Vertex Shader: Transforms vertex positions using the model, view, and
- *       projection matrices.
- *     - Fragment Shader: Outputs a uniform color provided as an input.
- *   - Phong Shading:
- *     - Vertex Shader: Computes world-space positions, normals, and light positions
- *       for the fragment shader.
- *     - Fragment Shader: Implements the Phong shading model, combining diffuse and
- *       specular lighting contributions.
- *   - Blinn-Phong Shading:
- *     - Vertex Shader: Similar to Phong Shading, computes world-space positions,
- *       normals, and light positions.
- *     - Fragment Shader: Implements the Blinn-Phong shading model, combining
- *       diffuse and Blinn-Phong specular lighting contributions.
+ * @details The supported shading techniques and corresponding shader implementations include:
+ *   - `ShadingType::ALBEDO_SHADING`: Implements basic texture mapping, computing
+ *     the final fragment color by sampling a diffuse texture applied to the geometry.
+ *     No lighting calculations are performed.
+ *   - `ShadingType::FLAT_SHADING`: Provides flat shading by computing face normals,
+ *     resulting in a uniform color for each surface, and applies basic lighting models
+ *     including diffuse and ambient components. The normals are not interpolated across
+ *     the surface.
+ *   - `ShadingType::PHONG_SHADING`: Implements the classic Phong shading model,
+ *     interpolating normals to achieve smooth surface shading. It includes diffuse and
+ *     specular lighting calculations for enhanced visual realism.
+ *   - `ShadingType::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
+ *     the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
+ *     highlights while maintaining visual quality.
  *
- * Each shading type utilizes GLSL version 4.10 Shader Language.
+ * This array facilitates the selection, usage, and management of GPU shader programs
+ * within a rendering engine. The shaders are written in GLSL, version 4.10, and are designed
+ * to operate in OpenGL rendering pipelines.
  */
 constexpr ShaderSource shader_sources[] = {
-    {ShadingType::FLAT_SHADING,
+    {
+        ShadingType::ALBEDO_SHADING,
         std::make_pair(
             R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
+            layout (location = 1) in vec3 aNormal;
+            layout (location = 2) in vec2 aTexCoords;
+
+            out vec2 TexCoords;
+
             uniform mat4 model;
             uniform mat4 view;
             uniform mat4 projection;
-            void main() {
+
+            void main()
+            {
+                TexCoords = aTexCoords;
                 gl_Position = projection * view * model * vec4(aPos, 1.0);
             }
-        )",
+)",
             R"(
-            #version 410 core
-            out vec4 FragColor;
-            uniform vec3 color;
-            void main() {
-                FragColor = vec4(color, 1.0);
-            }
-        )")},
+        #version 410 core
+        out vec4 FragColor;
+        in vec2 TexCoords;
+        uniform sampler2D texture_diffuse1;
+        void main()
+        {
+            FragColor = texture(texture_diffuse1, TexCoords);
+        })"),
+    },
+    {ShadingType::FLAT_SHADING,
+        std::make_pair(
+            R"(
+                #version 410 core
+                layout (location = 0) in vec3 aPos;       // Vertex position
+                layout (location = 1) in vec3 aNormal;    // Vertex normal
+                layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
+
+                out vec2 TexCoords;              // Pass texture coordinates to the fragment shader
+                flat out vec3 FaceNormal;        // Pass the face normal to the fragment shader (not interpolated)
+
+                uniform mat4 model;
+                uniform mat4 view;
+                uniform mat4 projection;
+
+                void main()
+                {
+                    // Calculate face normal in world space (flat shading)
+                    mat3 normalMatrix = transpose(inverse(mat3(model)));
+                    FaceNormal = normalize(normalMatrix * aNormal);
+
+                    // Pass through texture coordinates
+                    TexCoords = aTexCoords;
+
+                    // Transform vertex position to clip space
+                    gl_Position = projection * view * model * vec4(aPos, 1.0);
+                }
+            )",
+            R"(
+        #version 410 core
+
+        in vec2 TexCoords;              // Texture UV coordinates passed from the vertex shader
+        flat in vec3 FaceNormal;        // Flat face normal passed from the vertex shader
+        out vec4 FragColor;             // Final color output
+
+        uniform sampler2D texture_diffuse1; // Diffuse texture
+        uniform vec3 lightPos;              // Light position in world space
+        uniform vec3 viewPos;               // Camera/viewer position in world space
+        uniform vec3 lightColor;            // Color of the light
+        uniform float ambientStrength;      // Strength of ambient lighting
+
+        void main()
+        {
+            // Calculate basic lighting
+            vec3 lightDir = normalize(lightPos);              // Assume directional light for simplicity
+            float diff = max(dot(FaceNormal, lightDir), 0.0); // Diffuse component
+            vec3 diffuse = diff * lightColor;                 // Apply light color to diffuse amount
+
+            // Ambient lighting
+            vec3 ambient = ambientStrength * lightColor;
+
+            // Fetch texture color
+            vec4 texColor = texture(texture_diffuse1, TexCoords);
+
+            // Combine results: apply lighting to the texture color
+            vec3 lighting = (ambient + diffuse) * texColor.rgb;
+
+            // Output final color
+            FragColor = vec4(lighting, texColor.a);
+}        )")},
     {ShadingType::PHONG_SHADING,
         std::make_pair(
             R"(
@@ -224,7 +299,7 @@ constexpr ShaderSource shader_sources[] = {
  */
 class Shader {
 public:
-    Shader(ShadingType type);
+    Shader(ShadingType type = ShadingType::ALBEDO_SHADING);
     Shader(char const* vertex_path, char const* fragment_path);
     unsigned int m_id;
     void use() const;
