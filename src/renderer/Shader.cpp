@@ -4,6 +4,43 @@
 #include <iostream>
 #include <sstream>
 
+Shader::Shader(ShadingType type)
+{
+    // Find the shader source corresponding to the provided ShadingType
+    auto const it = std::ranges::find_if(shader_sources,
+        [type](ShaderSource const& source) {
+            return source.type == type;
+        });
+
+    if (it == std::end(shader_sources)) {
+        throw std::invalid_argument("Invalid ShadingType provided.");
+    }
+
+    // Extract vertex and fragment shader code
+    char const* vertex_code = it->shader_code.first;
+    char const* fragment_code = it->shader_code.second;
+
+    // Compile shaders and set up the shader program
+    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_code, nullptr);
+    glCompileShader(vertex_shader);
+    check_compile_errors(vertex_shader, "VERTEX");
+
+    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_code, nullptr);
+    glCompileShader(fragment_shader);
+    check_compile_errors(fragment_shader, "FRAGMENT");
+
+    m_id = glCreateProgram();
+    glAttachShader(m_id, vertex_shader);
+    glAttachShader(m_id, fragment_shader);
+    glLinkProgram(m_id);
+    check_compile_errors(m_id, "PROGRAM");
+
+    // Cleanup shaders as they are already linked into our program
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+}
 Shader::Shader(char const* vertex_path, char const* fragment_path)
 {
     std::string vertex_code;
