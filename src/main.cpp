@@ -77,19 +77,23 @@ int main()
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
     auto camera_controller = CameraController{CameraController::Type::ORBIT, glm::vec3{0.f, 0.f, -3.f}};
+    Shader shader(ShadingType::ALBEDO_SHADING);
+
     auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
     }
-    Shader shader{"src/shader/obj.vert", "src/shader/obj.frag"};
 
     auto root_transform = Transform{
         .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
         .orientation = glm::vec3{0.0f},
         .scale = glm::vec3{1.0f},
     };
+
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
+    // TODO: find suitable light position
+    auto light_position = glm::vec4{0.f, 0.f, 1.f, 1.f};
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
@@ -109,6 +113,25 @@ int main()
         glEnable(GL_DEPTH_TEST);
 
         camera_controller.camera->draw(shader, framebuffer, scene_instance);
+        shader.use();
+
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 100000.0f);
+        glm::mat4 view = camera.get_view_matrix();
+        shader.set_mat4("projection", projection);
+        shader.set_mat4("view", view);
+        shader.set_vec3("lightColor", glm::vec3(1.0f)); // White light
+
+        // render the loaded model
+        scene_instance.traverse([&](auto transform_matrix, auto const& node) {
+            shader.set_mat4("model", transform_matrix);
+            // set light position relative to transformation matrix of the model
+            shader.set_vec3("lightPos", glm::vec3{transform_matrix * light_position});
+
+            for (auto const& mesh : node.meshes) {
+                mesh.draw(shader);
+            }
+        });
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();

@@ -38,6 +38,7 @@
 # Cache directories
 /.cache
 /.direnv
+*.DS_Store
 
 # Other
 imgui.ini
