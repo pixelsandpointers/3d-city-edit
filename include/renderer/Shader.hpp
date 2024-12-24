@@ -26,7 +26,6 @@
 enum class ShadingType {
     ALBEDO_SHADING,
     FLAT_SHADING,
-    PHONG_SHADING,
     BLINN_PHONG_SHADING,
 };
 
@@ -47,7 +46,8 @@ enum class ShadingType {
  */
 struct ShaderSource {
     ShadingType type;
-    std::pair<char const*, char const*> shader_code;
+    char const* vertex_shader;
+    char const* fragment_shader;
 };
 
 /**
@@ -67,9 +67,6 @@ struct ShaderSource {
  *     resulting in a uniform color for each surface, and applies basic lighting models
  *     including diffuse and ambient components. The normals are not interpolated across
  *     the surface.
- *   - `ShadingType::PHONG_SHADING`: Implements the classic Phong shading model,
- *     interpolating normals to achieve smooth surface shading. It includes diffuse and
- *     specular lighting calculations for enhanced visual realism.
  *   - `ShadingType::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
  *     the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
  *     highlights while maintaining visual quality.
@@ -81,8 +78,7 @@ struct ShaderSource {
 constexpr ShaderSource shader_sources[] = {
     {
         ShadingType::ALBEDO_SHADING,
-        std::make_pair(
-            R"(
+        R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
             layout (location = 1) in vec3 aNormal;
@@ -99,8 +95,8 @@ constexpr ShaderSource shader_sources[] = {
                 TexCoords = aTexCoords;
                 gl_Position = projection * view * model * vec4(aPos, 1.0);
             }
-)",
-            R"(
+        )",
+        R"(
         #version 410 core
         out vec4 FragColor;
         in vec2 TexCoords;
@@ -108,11 +104,11 @@ constexpr ShaderSource shader_sources[] = {
         void main()
         {
             FragColor = texture(texture_diffuse1, TexCoords);
-        })"),
+        }
+    )",
     },
     {ShadingType::FLAT_SHADING,
-        std::make_pair(
-            R"(
+        R"(
                 #version 410 core
                 layout (location = 0) in vec3 aPos;       // Vertex position
                 layout (location = 1) in vec3 aNormal;    // Vertex normal
@@ -138,7 +134,7 @@ constexpr ShaderSource shader_sources[] = {
                     gl_Position = projection * view * model * vec4(aPos, 1.0);
                 }
             )",
-            R"(
+        R"(
         #version 410 core
 
         in vec2 TexCoords;              // Texture UV coordinates passed from the vertex shader
@@ -169,64 +165,10 @@ constexpr ShaderSource shader_sources[] = {
 
             // Output final color
             FragColor = vec4(lighting, texColor.a);
-}        )")},
-    {ShadingType::PHONG_SHADING,
-        std::make_pair(
-            R"(
-        #version 410 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aNormal;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-        uniform vec3 lightPos;
-
-        out vec3 FragPos;
-        out vec3 Normal;
-        out vec3 LightPos;
-
-        void main() {
-            FragPos = vec3(model * vec4(aPos, 1.0));
-            Normal = mat3(transpose(inverse(model))) * aNormal;
-            LightPos = lightPos;
-            gl_Position = projection * view * vec4(FragPos, 1.0);
-        }
-        )",
-            R"(
-        #version 410 core
-        in vec3 FragPos;
-        in vec3 Normal;
-        in vec3 LightPos;
-
-        uniform vec3 lightColor;
-        uniform vec3 viewPos;
-        uniform vec3 objectColor;
-
-        out vec4 FragColor;
-
-        void main() {
-            vec3 norm = normalize(Normal);
-            vec3 lightDir = normalize(LightPos - FragPos);
-
-            // Diffuse shading
-            float diff = max(dot(norm, lightDir), 0.0);
-            vec3 diffuse = diff * lightColor;
-
-            // Specular shading
-            vec3 viewDir = normalize(viewPos - FragPos);
-            vec3 reflectDir = reflect(-lightDir, norm);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-            vec3 specular = lightColor * spec;
-
-            // Combine
-            vec3 result = (diffuse + specular) * objectColor;
-            FragColor = vec4(result, 1.0);
-        }
-        )")},
+}        
+)"},
     {ShadingType::BLINN_PHONG_SHADING,
-        std::make_pair(
-            R"(
+        R"(
         #version 410 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aNormal;
@@ -247,7 +189,7 @@ constexpr ShaderSource shader_sources[] = {
             gl_Position = projection * view * vec4(FragPos, 1.0);
         }
         )",
-            R"(
+        R"(
         #version 410 core
         in vec3 FragPos;
         in vec3 Normal;
@@ -277,7 +219,7 @@ constexpr ShaderSource shader_sources[] = {
             vec3 result = (diffuse + specular) * objectColor;
             FragColor = vec4(result, 1.0);
         }
-        )")}};
+        )"}};
 
 /**
  * @brief Represents a programmable graphics processing unit (GPU) shader.
