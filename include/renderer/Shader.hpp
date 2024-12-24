@@ -241,6 +241,11 @@ constexpr ShaderSource shader_sources[] = {
  */
 class Shader {
 public:
+    enum class ShadingStage {
+        VERTEX,
+        FRAGMENT,
+        PROGRAM,
+    };
     Shader(ShadingType type = ShadingType::ALBEDO_SHADING);
     Shader(char const* vertex_path, char const* fragment_path);
     unsigned int m_id;
@@ -256,5 +261,7 @@ public:
     void set_vec4(char const* name, glm::vec4 const& vector) const;
 
 private:
-    void check_compile_errors(unsigned int shader, std::string type) const;
+    void check_compile_errors(unsigned int shader, ShadingStage stage) const;
+    unsigned int compile_shader(ShadingStage stage, char const* source) const;
+    void link_shaders_to_program(unsigned vertex_shader, unsigned fragment_shader);
 };
