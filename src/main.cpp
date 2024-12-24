@@ -97,7 +97,6 @@ int main()
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
-    auto last_frame = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
         auto current_frame = glfwGetTime();
@@ -109,9 +108,22 @@ int main()
         camera_controller.update(delta_time);
 
         /* Render here */
+        /*
+         * glClear clears the color and depth buffer
+         * enable depth testing utilizing a depth buffer
+         * depth function is a depth test checking if the current pixel is closer to the camera than
+         * the one in the buffer
+         * blending enabled for transparency
+         * blend function set to mix the color of the object with the existing pixel in the buffer
+         * Final_Color = (Source_Color * Source_Alpha) + (Destination_Color * (1 - Source_Alpha));
+         */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        // draw calls from here
         camera_controller.camera->draw(shader, framebuffer, scene_instance);
         shader.use();
 
@@ -141,8 +153,6 @@ int main()
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        Input::late_update();
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
