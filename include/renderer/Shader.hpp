@@ -87,13 +87,13 @@ constexpr ShaderSource shader_sources[] = {
             out vec2 TexCoords;
 
             uniform mat4 model;
-            uniform mat4 view;
+            uniform mat4 viewPos;
             uniform mat4 projection;
 
             void main()
             {
                 TexCoords = aTexCoords;
-                gl_Position = projection * view * model * vec4(aPos, 1.0);
+                gl_Position = projection * viewPos * model * vec4(aPos, 1.0);
             }
         )",
         R"(
@@ -118,7 +118,7 @@ constexpr ShaderSource shader_sources[] = {
                 flat out vec3 FaceNormal;        // Pass the face normal to the fragment shader (not interpolated)
 
                 uniform mat4 model;
-                uniform mat4 view;
+                uniform mat4 viewPos;
                 uniform mat4 projection;
 
                 void main()
@@ -131,28 +131,35 @@ constexpr ShaderSource shader_sources[] = {
                     TexCoords = aTexCoords;
 
                     // Transform vertex position to clip space
-                    gl_Position = projection * view * model * vec4(aPos, 1.0);
+                    gl_Position = projection * viewPos * model * vec4(aPos, 1.0);
                 }
             )",
         R"(
         #version 410 core
+        struct Light {
+            vec3 direction;
+            vec3 color;
+        };
 
         in vec2 TexCoords;              // Texture UV coordinates passed from the vertex shader
         flat in vec3 FaceNormal;        // Flat face normal passed from the vertex shader
         out vec4 FragColor;             // Final color output
-
+        
+        uniform Light light;                // Directional light
         uniform sampler2D texture_diffuse1; // Diffuse texture
-        uniform vec3 lightPos;              // Light position in world space
         uniform vec3 viewPos;               // Camera/viewer position in world space
-        uniform vec3 lightColor;            // Color of the light
         uniform float ambientStrength;      // Strength of ambient lighting
+
 
         void main()
         {
             // Calculate basic lighting
-            vec3 lightDir = normalize(lightPos);              // Assume directional light for simplicity
-            float diff = max(dot(FaceNormal, lightDir), 0.0); // Diffuse component
-            vec3 diffuse = diff * lightColor;                 // Apply light color to diffuse amount
+            vec3 lightDir = normalize(-light.direction);        // Assume directional light for simplicity
+            vec3 lightColor = light.color;                      // Light color
+
+            // Diffuse
+            float diff = max(dot(FaceNormal, lightDir), 0.0);
+            vec3 diffuse = diff * light.color;                  // Apply light color to diffuse amount
 
             // Ambient lighting
             vec3 ambient = ambientStrength * lightColor;
@@ -172,38 +179,46 @@ constexpr ShaderSource shader_sources[] = {
         #version 410 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aNormal;
+        layout (location = 2) in vec2 aTexCoords;
 
         uniform mat4 model;
         uniform mat4 view;
         uniform mat4 projection;
         uniform vec3 lightPos;
+        uniform sampler2D texture_diffuse1; // Diffuse texture
 
         out vec3 FragPos;
         out vec3 Normal;
         out vec3 LightPos;
+        out vec2 TexCoords;
 
         void main() {
             FragPos = vec3(model * vec4(aPos, 1.0));
             Normal = mat3(transpose(inverse(model))) * aNormal;
+            TexCoords = aTexCoords;
             LightPos = lightPos;
             gl_Position = projection * view * vec4(FragPos, 1.0);
         }
         )",
         R"(
         #version 410 core
+        in vec2 TexCoords;
         in vec3 FragPos;
         in vec3 Normal;
         in vec3 LightPos;
 
         uniform vec3 lightColor;
         uniform vec3 viewPos;
-        uniform vec3 objectColor;
+        uniform sampler2D textureDiffuse1;
 
         out vec4 FragColor;
 
         void main() {
             vec3 norm = normalize(Normal);
             vec3 lightDir = normalize(LightPos - FragPos);
+
+            // albedo
+            vec4 objectColor = texture(textureDiffuse1, texCoords);
 
             // Diffuse shading
             float diff = max(dot(norm, lightDir), 0.0);

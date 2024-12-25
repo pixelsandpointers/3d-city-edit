@@ -42,6 +42,8 @@ int main()
     glfwWindowHintString(GLFW_X11_CLASS_NAME, "3d");
     glfwWindowHintString(GLFW_WAYLAND_APP_ID, "3d");
 
+    constexpr float aspect = framebuffer.width / static_cast<float>(framebuffer.height);
+
     auto* window = glfwCreateWindow(framebuffer.width, framebuffer.height, "Hello World", nullptr, nullptr);
     if (!window) {
         std::cout << "glfwCreateWindow() failed\n";
@@ -93,7 +95,7 @@ int main()
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
     // TODO: find suitable light position
-    auto light_position = glm::vec4{0.f, 0.f, 1.f, 1.f};
+    auto light_position = glm::vec4{1.f, 1.f, 1.f, 1.f};
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
@@ -128,17 +130,18 @@ int main()
         shader.use();
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 100000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), aspect, 0.1f, 100000.0f);
         glm::mat4 view = camera.get_view_matrix();
         shader.set_mat4("projection", projection);
-        shader.set_mat4("view", view);
-        shader.set_vec3("lightColor", glm::vec3(1.0f)); // White light
+        shader.set_mat4("viewPos", view);
+        shader.set_float("ambientStrength", 0.1f);
+        shader.set_vec3("light.color", glm::vec3{0.7f, 0.4f, 0.1f});
 
         // render the loaded model
         scene_instance.traverse([&](auto transform_matrix, auto const& node) {
             shader.set_mat4("model", transform_matrix);
             // set light position relative to transformation matrix of the model
-            shader.set_vec3("lightPos", glm::vec3{transform_matrix * light_position});
+            shader.set_vec3("light.direction", glm::vec3{transform_matrix * light_position});
 
             for (auto const& mesh : node.meshes) {
                 mesh.draw(shader);
