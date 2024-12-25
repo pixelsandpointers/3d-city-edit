@@ -1,6 +1,6 @@
-#include "core/AssetManager.hpp"
 #include "core/CameraController.hpp"
 #include "core/Input.hpp"
+#include "core/Project.hpp"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
 #include "ui/ObjectDetails.hpp"
@@ -78,6 +78,7 @@ int main()
     // assuming we set the CWD to root
     auto path = std::filesystem::current_path();
     std::cout << path.string().c_str() << std::endl;
+    Project::load(path);
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
     // INIT UI
@@ -87,7 +88,7 @@ int main()
     auto viewing_mode = shader_uniform_pane.viewing_mode;
 
     auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
-    auto obj = AssetManager::get_model(path);
+    auto obj = Project::get_current()->get_model(path);
     if (!obj) {
         std::abort();
     }

@@ -1,6 +1,6 @@
 #include "core/ModelLoader.hpp"
 
-#include "core/AssetManager.hpp"
+#include "core/Project.hpp"
 #include "renderer/Mesh.hpp"
 #include "renderer/Texture.hpp"
 #include <assimp/Importer.hpp>
@@ -75,7 +75,8 @@ std::vector<std::pair<std::string, Texture*>> load_material_textures(aiMaterial*
             continue;
         }
 
-        auto texture = AssetManager::get_texture(texture_path.value());
+        assert(Project::get_current() != nullptr);
+        auto texture = Project::get_current()->get_texture(texture_path.value());
         if (!texture) {
             continue;
         }
