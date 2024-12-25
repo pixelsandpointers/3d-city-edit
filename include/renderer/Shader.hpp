@@ -212,6 +212,7 @@ constexpr ShaderSource shader_sources[] = {
         uniform Light light;
         uniform vec3 cameraPos;
         uniform float ambientStrength;
+        uniform bool useBlinn;
 
         out vec4 FragColor;
 
@@ -230,8 +231,14 @@ constexpr ShaderSource shader_sources[] = {
             // specular
             vec3 viewDir = normalize(cameraPos - FragPos);
             vec3 reflectionDir = reflect(-lightDir, normal);
-            vec3 halfDir = normalize(lightDir + viewDir);
-            float spec = pow(max(dot(normal, halfDir), 0.0), 32.);
+            float spec = 0.f;
+            if (useBlinn) {
+                vec3 halfDir = normalize(lightDir + viewDir);
+                spec = pow(max(dot(normal, halfDir), 0.0), 32.);
+            } else {
+                vec3 reflectDir = reflect(-lightDir, normal);
+                spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
+            }
             vec3 specular = light.color * spec;
             FragColor = vec4(ambient + diffuse + specular, 1.0);
         }
