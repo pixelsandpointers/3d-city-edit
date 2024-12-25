@@ -54,7 +54,7 @@ int main()
 
     glfwMakeContextCurrent(window);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         std::cout << "Failed to initialize GLAD\n";
         return -1;
     }
@@ -82,19 +82,38 @@ int main()
     if (!obj) {
         std::abort();
     }
-    Shader shader{ShadingType::BLINN_PHONG_SHADING};
 
     auto root_transform = Transform{
         .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
         .orientation = glm::vec3{0.0f},
         .scale = glm::vec3{1.0f},
     };
+
+    Shader shader;
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
     auto last_frame = glfwGetTime();
+
+    // TODO: provide a toggle in the UI to change viewing mode, so people can jump from Wireframe to Flat to Lid.
+    ViewingMode viewing_mode = ViewingMode::LID;
+    switch (viewing_mode) {
+    case ViewingMode::WIREFRAME:
+        shader = Shader(ShadingType::FLAT_SHADING);
+        break;
+    case ViewingMode::FLAT:
+        shader = Shader(ShadingType::FLAT_SHADING);
+        break;
+    case ViewingMode::LID:
+        shader = Shader(ShadingType::BLINN_PHONG_SHADING);
+        break;
+    default:
+        std::cerr << "Invalid viewing mode. Defaulting to lid.\n";
+        shader = Shader(ShadingType::BLINN_PHONG_SHADING);
+        break;
+    }
 
     while (!glfwWindowShouldClose(window)) {
         auto current_frame = glfwGetTime();
@@ -109,7 +128,21 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        camera_controller.camera->draw(shader, framebuffer, scene_instance);
+        // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
+        // so they can be adjusted in global scope e.g. the GUI
+        std::unordered_map<std::string, std::variant<int, float, bool, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4>> uniforms{
+            {"light.direction", glm::vec4{1.0f}},
+            {"light.color", glm::vec3{0.7f, 0.4f, 0.1f}},
+            {"useBlinn", true},
+            {"ambientStrength", 0.1f}};
+
+        if (viewing_mode == ViewingMode::WIREFRAME) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        camera_controller.camera->draw(shader, uniforms, framebuffer, scene_instance);
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();

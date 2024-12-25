@@ -12,6 +12,12 @@ struct Framebuffer {
     float aspect;
 };
 
+enum class ViewingMode {
+    FLAT,
+    LID,
+    WIREFRAME,
+};
+
 class Camera {
 public:
     // camera Attributes
@@ -27,5 +33,8 @@ public:
     // constructor with vectors
     Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f));
 
-    void draw(Shader&, Framebuffer const&, InstancedNode const&);
+    void draw(Shader&,
+        std::unordered_map<std::string, std::variant<int, float, bool, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4>> const&,
+        Framebuffer const&,
+        InstancedNode const&);
 };

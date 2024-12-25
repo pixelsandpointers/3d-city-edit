@@ -15,8 +15,6 @@
  * @details The available shading types include:
  *   - ALBEDO_SHADING: Only assigns the texture color to the polygon.
  *   - FLAT_SHADING: A shading technique where a single color is applied per polygon.
- *   - PHONG_SHADING: A method where colors are interpolated based on vertex normals,
- *     providing smooth shading across surfaces.
  *   - BLINN_PHONG_SHADING: An extension of the Phong shading model that incorporates
  *     a more computationally efficient specular reflection calculation.
  *
@@ -25,8 +23,8 @@
  */
 enum class ShadingType {
     ALBEDO_SHADING,
-    FLAT_SHADING,
     BLINN_PHONG_SHADING,
+    FLAT_SHADING,
 };
 
 /**
@@ -109,30 +107,25 @@ constexpr ShaderSource shader_sources[] = {
     },
     {ShadingType::FLAT_SHADING,
         R"(
-                #version 410 core
-                layout (location = 0) in vec3 aPos;       // Vertex position
-                layout (location = 1) in vec3 aNormal;    // Vertex normal
-                layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
+            #version 410 core
+            layout (location = 0) in vec3 aPos;       // Vertex position
+            layout (location = 1) in vec3 aNormal;    // Vertex normal
+            layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
 
-                out vec2 TexCoords;              // Pass texture coordinates to the fragment shader
-                flat out vec3 FaceNormal;        // Pass the face normal to the fragment shader (not interpolated)
+            flat out vec3 FlatNormal;                 // Pass the face normal to the fragment shader (not interpolated)
 
-                uniform mat4 model;
-                uniform mat4 view;
-                uniform mat4 projection;
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
 
-                void main()
-                {
-                    // Calculate face normal in world space (flat shading)
-                    mat3 normalMatrix = transpose(inverse(mat3(model)));
-                    FaceNormal = normalize(normalMatrix * aNormal);
+            void main() {
+                // Calculate face normal in world space (flat shading)
+                mat3 normalMatrix = transpose(inverse(mat3(model)));
+                FlatNormal = normalize(normalMatrix * aNormal);
 
-                    // Pass through texture coordinates
-                    TexCoords = aTexCoords;
-
-                    // Transform vertex position to clip space
-                    gl_Position = projection * view * model * vec4(aPos, 1.0);
-                }
+                // Transform vertex position to clip space
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
+            }
             )",
         R"(
         #version 410 core
@@ -140,39 +133,17 @@ constexpr ShaderSource shader_sources[] = {
             vec3 direction;
             vec3 color;
         };
-
-        in vec2 TexCoords;              // Texture UV coordinates passed from the vertex shader
-        flat in vec3 FaceNormal;        // Flat face normal passed from the vertex shader
-        out vec4 FragColor;             // Final color output
+        flat in vec3 FlatNormal;
+        uniform Light light; // Direction of the light source (normalized)
+        out vec4 FragColor;
         
-        uniform Light light;                // Directional light
-        uniform sampler2D texture_diffuse1; // Diffuse texture
-        uniform vec3 view;               // Camera/viewer position in world space
-        uniform float ambientStrength;      // Strength of ambient lighting
+        void main() {
+            // Calculate grayscale intensity using the Lambertian reflectance model
+            float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
 
-
-        void main()
-        {
-            // Calculate basic lighting
-            vec3 lightDir = normalize(-light.direction);        // Assume directional light for simplicity
-            vec3 lightColor = light.color;                      // Light color
-
-            // Diffuse
-            float diff = max(dot(FaceNormal, lightDir), 0.0);
-            vec3 diffuse = diff * light.color;                  // Apply light color to diffuse amount
-
-            // Ambient lighting
-            vec3 ambient = ambientStrength * lightColor;
-
-            // Fetch texture color
-            vec4 texColor = texture(texture_diffuse1, TexCoords);
-
-            // Combine results: apply lighting to the texture color
-            vec3 lighting = (ambient + diffuse) * texColor.rgb;
-
-            // Output final color
-            FragColor = vec4(lighting, texColor.a);
-}        
+            // Output as grayscale
+            FragColor = vec4(vec3(brightness), 1.0);
+        }        
 )"},
     {ShadingType::BLINN_PHONG_SHADING,
         R"(
