@@ -15,7 +15,7 @@ Framebuffer framebuffer{
     .id = 0,
     .width = 640,
     .height = 480,
-};
+    .aspect = 640.f / 480.f};
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -26,6 +26,7 @@ void glfw_window_size_callback(GLFWwindow*, int width, int height)
 {
     framebuffer.width = width;
     framebuffer.height = height;
+    framebuffer.aspect = width / static_cast<float>(height);
 }
 
 int main()
@@ -41,8 +42,6 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHintString(GLFW_X11_CLASS_NAME, "3d");
     glfwWindowHintString(GLFW_WAYLAND_APP_ID, "3d");
-
-    constexpr float aspect = framebuffer.width / static_cast<float>(framebuffer.height);
 
     auto* window = glfwCreateWindow(framebuffer.width, framebuffer.height, "Hello World", nullptr, nullptr);
     if (!window) {
@@ -79,26 +78,23 @@ int main()
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
     auto camera_controller = CameraController{CameraController::Type::ORBIT, glm::vec3{0.f, 0.f, -3.f}};
-    Shader shader(ShadingType::BLINN_PHONG_SHADING);
-
     auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
     }
+    Shader shader{ShadingType::BLINN_PHONG_SHADING};
 
     auto root_transform = Transform{
         .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
         .orientation = glm::vec3{0.0f},
         .scale = glm::vec3{1.0f},
     };
-
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
-    // TODO: find suitable light position
-    auto light_position = glm::vec4{1.f, 1.f, 1.f, 1.f};
 
     auto scene_instance = scene.instanciate();
     scene_instance.compute_transforms();
+    auto last_frame = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
         auto current_frame = glfwGetTime();
@@ -110,46 +106,10 @@ int main()
         camera_controller.update(delta_time);
 
         /* Render here */
-        /*
-         * glClear clears the color and depth buffer
-         * enable depth testing utilizing a depth buffer
-         * depth function is a depth test checking if the current pixel is closer to the camera than
-         * the one in the buffer
-         * blending enabled for transparency
-         * blend function set to mix the color of the object with the existing pixel in the buffer
-         * Final_Color = (Source_Color * Source_Alpha) + (Destination_Color * (1 - Source_Alpha));
-         */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // draw calls from here
         camera_controller.camera->draw(shader, framebuffer, scene_instance);
-        shader.use();
-
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera_controller.camera.), aspect, 0.1f, 100000.0f);
-        glm::mat4 view = camera.get_view_matrix();
-        shader.set_mat4("projection", projection);
-        shader.set_mat4("viewPos", view);
-        shader.set_vec3("cameraPos", camera.m_position);
-        shader.set_bool("useBlinn", true);
-        shader.set_vec3("cameraPos", camera_controller.camera->position);
-        shader.set_float("ambientStrength", 0.1f);
-        shader.set_vec3("light.color", glm::vec3{0.7f, 0.4f, 0.1f});
-
-        // render the loaded model
-        scene_instance.traverse([&](auto transform_matrix, auto const& node) {
-            shader.set_mat4("model", transform_matrix);
-            // set light position relative to transformation matrix of the model
-            shader.set_vec3("light.direction", glm::vec3{transform_matrix * light_position});
-
-            for (auto const& mesh : node.meshes) {
-                mesh.draw(shader);
-            }
-        });
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -159,6 +119,8 @@ int main()
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        Input::late_update();
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
