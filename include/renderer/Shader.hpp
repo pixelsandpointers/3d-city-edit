@@ -87,13 +87,13 @@ constexpr ShaderSource shader_sources[] = {
             out vec2 TexCoords;
 
             uniform mat4 model;
-            uniform mat4 viewPos;
+            uniform mat4 view;
             uniform mat4 projection;
 
             void main()
             {
                 TexCoords = aTexCoords;
-                gl_Position = projection * viewPos * model * vec4(aPos, 1.0);
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
             }
         )",
         R"(
@@ -118,7 +118,7 @@ constexpr ShaderSource shader_sources[] = {
                 flat out vec3 FaceNormal;        // Pass the face normal to the fragment shader (not interpolated)
 
                 uniform mat4 model;
-                uniform mat4 viewPos;
+                uniform mat4 view;
                 uniform mat4 projection;
 
                 void main()
@@ -131,7 +131,7 @@ constexpr ShaderSource shader_sources[] = {
                     TexCoords = aTexCoords;
 
                     // Transform vertex position to clip space
-                    gl_Position = projection * viewPos * model * vec4(aPos, 1.0);
+                    gl_Position = projection * view * model * vec4(aPos, 1.0);
                 }
             )",
         R"(
@@ -147,7 +147,7 @@ constexpr ShaderSource shader_sources[] = {
         
         uniform Light light;                // Directional light
         uniform sampler2D texture_diffuse1; // Diffuse texture
-        uniform vec3 viewPos;               // Camera/viewer position in world space
+        uniform vec3 view;               // Camera/viewer position in world space
         uniform float ambientStrength;      // Strength of ambient lighting
 
 
@@ -182,7 +182,7 @@ constexpr ShaderSource shader_sources[] = {
         layout (location = 2) in vec2 aTexCoords;
 
         uniform mat4 model;
-        uniform mat4 viewPos;
+        uniform mat4 view;
         uniform mat4 projection;
 
         out vec3 FragPos;
@@ -194,7 +194,7 @@ constexpr ShaderSource shader_sources[] = {
             Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
             TexCoords = aTexCoords;
 
-            gl_Position = projection * viewPos * vec4(FragPos, 1.0);
+            gl_Position = projection * view * vec4(FragPos, 1.0);
         }
         )",
         R"(

@@ -9,6 +9,7 @@ struct Framebuffer {
     unsigned int id;
     int width;
     int height;
+    float aspect;
 };
 
 class Camera {
