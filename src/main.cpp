@@ -79,7 +79,7 @@ int main()
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
     auto camera_controller = CameraController{CameraController::Type::ORBIT, glm::vec3{0.f, 0.f, -3.f}};
-    Shader shader(ShadingType::ALBEDO_SHADING);
+    Shader shader(ShadingType::BLINN_PHONG_SHADING);
 
     auto obj = AssetManager::get_model(path);
     if (!obj) {
@@ -130,10 +130,11 @@ int main()
         shader.use();
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.m_zoom), aspect, 0.1f, 100000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera_controller.camera.), aspect, 0.1f, 100000.0f);
         glm::mat4 view = camera.get_view_matrix();
         shader.set_mat4("projection", projection);
         shader.set_mat4("viewPos", view);
+        shader.set_vec3("cameraPos", camera_controller.camera->position);
         shader.set_float("ambientStrength", 0.1f);
         shader.set_vec3("light.color", glm::vec3{0.7f, 0.4f, 0.1f});
 
