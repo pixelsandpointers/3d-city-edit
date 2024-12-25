@@ -134,6 +134,8 @@ int main()
         glm::mat4 view = camera.get_view_matrix();
         shader.set_mat4("projection", projection);
         shader.set_mat4("viewPos", view);
+        shader.set_vec3("cameraPos", camera.m_position);
+        shader.set_bool("useBlinn", true);
         shader.set_vec3("cameraPos", camera_controller.camera->position);
         shader.set_float("ambientStrength", 0.1f);
         shader.set_vec3("light.color", glm::vec3{0.7f, 0.4f, 0.1f});
