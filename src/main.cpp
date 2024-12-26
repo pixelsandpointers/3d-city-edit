@@ -89,7 +89,7 @@ int main()
         .scale = glm::vec3{1.0f},
     };
 
-    Shader shader;
+    Shader shader(ShadingType::BLINN_PHONG_SHADING);
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
 
@@ -97,16 +97,20 @@ int main()
     scene_instance.compute_transforms();
     auto last_frame = glfwGetTime();
 
-    // TODO: provide a toggle in the UI to change viewing mode, so people can jump from Wireframe to Flat to Lid.
-    ViewingMode viewing_mode = ViewingMode::LID;
+    // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
+    // so they can be adjusted in global scope e.g. the GUI
+    static Uniforms uniforms{};
+
+    // TODO: provide a toggle in the UI to change viewing mode, so people can jump from Wireframe to Solid to Rendered views.
+    ViewingMode viewing_mode = ViewingMode::RENDERED;
     switch (viewing_mode) {
     case ViewingMode::WIREFRAME:
-        shader = Shader(ShadingType::FLAT_SHADING);
+        shader = Shader(ShadingType::SOLID_SHADING);
         break;
-    case ViewingMode::FLAT:
-        shader = Shader(ShadingType::FLAT_SHADING);
+    case ViewingMode::SOLID:
+        shader = Shader(ShadingType::SOLID_SHADING);
         break;
-    case ViewingMode::LID:
+    case ViewingMode::RENDERED:
         shader = Shader(ShadingType::BLINN_PHONG_SHADING);
         break;
     default:
@@ -127,14 +131,6 @@ int main()
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-
-        // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
-        // so they can be adjusted in global scope e.g. the GUI
-        std::unordered_map<std::string, std::variant<int, float, bool, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4>> uniforms{
-            {"light.direction", glm::vec4{1.0f}},
-            {"light.color", glm::vec3{0.7f, 0.4f, 0.1f}},
-            {"useBlinn", true},
-            {"ambientStrength", 0.1f}};
 
         if (viewing_mode == ViewingMode::WIREFRAME) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
