@@ -11,7 +11,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float fov)
 
 // add viewing type => lid, wireframe, etc
 void Camera::draw(Shader& shader,
-    std::unordered_map<std::string, std::variant<int, float, bool, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4>> const& uniforms,
+    Uniforms const& uniforms,
     Framebuffer const& framebuffer,
     InstancedNode const& node)
 {
@@ -22,15 +22,15 @@ void Camera::draw(Shader& shader,
 
     glm::mat4 projection = glm::perspective(fov, framebuffer.aspect, near, far);
     auto view = glm::lookAt(position, target, up);
-    auto light_pos = std::get<glm::vec4>(uniforms.at("light.direction"));
+    auto light_pos = uniforms.light.direction;
 
     // view/projection transformations
     shader.set_mat4("projection", projection);
     shader.set_mat4("view", view);
     shader.set_vec3("cameraPos", position);
-    shader.set_bool("useBlinn", std::get<bool>(uniforms.at("useBlinn")));
-    shader.set_float("ambientStrength", std::get<float>(uniforms.at("ambientStrength")));
-    shader.set_vec3("light.color", std::get<glm::vec3>(uniforms.at("light.color")));
+    shader.set_bool("useBlinn", uniforms.use_blinn);
+    shader.set_float("ambientStrength", uniforms.ambient_strength);
+    shader.set_vec3("light.color", uniforms.light.color);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
         for (auto const& mesh : node_data.meshes) {

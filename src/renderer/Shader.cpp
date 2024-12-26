@@ -3,22 +3,183 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 
+// clang-format off
+/**
+ * @brief Collection of shader sources for different shading techniques.
+ *
+ * The `shader_sources` is a constant array containing the GLSL vertex and fragment shader
+ * source codes for various shading techniques. Each entry in the array corresponds to a
+ * particular `ShadingType` and provides a pair of strings: the vertex shader source and
+ * the matching fragment shader source. These shaders define the behavior of the rendering
+ * pipeline when a specific shading technique is used.
+ *
+ * @details The supported shading techniques and corresponding shader implementations include:
+ *   - `ShadingType::ALBEDO_SHADING`: Implements basic texture mapping, computing
+ *     the final fragment color by sampling a diffuse texture applied to the geometry.
+ *     No lighting calculations are performed.
+ *   - `ShadingType::FLAT_SHADING`: Provides flat shading by computing face normals,
+ *     resulting in a uniform color for each surface, and applies basic lighting models
+ *     including diffuse and ambient components. The normals are not interpolated across
+ *     the surface.
+ *   - `ShadingType::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
+ *     the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
+ *     highlights while maintaining visual quality.
+ *
+ * This array facilitates the selection, usage, and management of GPU shader programs
+ * within a rendering engine. The shaders are written in GLSL, version 4.10, and are designed
+ * to operate in OpenGL rendering pipelines.
+ */
+const std::unordered_map<ShadingType, ShaderSource> shader_sources
+{
+    {
+        ShadingType::ALBEDO_SHADING,
+        ShaderSource {
+            .vertex_shader = R"(
+            #version 410 core
+            layout (location = 0) in vec3 aPos;
+            layout (location = 1) in vec3 aNormal;
+            layout (location = 2) in vec2 aTexCoords;
+
+            out vec2 TexCoords;
+
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            void main() {
+                TexCoords = aTexCoords;
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
+            })",
+
+            .fragment_shader = R"(
+            #version 410 core
+            out vec4 FragColor;
+            in vec2 TexCoords;
+            uniform sampler2D texture_diffuse1;
+            void main() {
+                FragColor = texture(texture_diffuse1, TexCoords);
+            })"
+        }
+    },
+    {
+        ShadingType::SOLID_SHADING,
+        ShaderSource {
+            .vertex_shader = R"(
+            #version 410 core
+            layout (location = 0) in vec3 aPos;       // Vertex position
+            layout (location = 1) in vec3 aNormal;    // Vertex normal
+            layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
+
+            flat out vec3 FlatNormal;                 // Pass the face normal to the fragment shader (not interpolated)
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            void main() {
+                // Calculate face normal in world space (flat shading)
+                mat3 normalMatrix = transpose(inverse(mat3(model)));
+                FlatNormal = normalize(normalMatrix * aNormal);
+                // Transform vertex position to clip space
+                gl_Position = projection * view * model * vec4(aPos, 1.0);
+            })",
+
+            .fragment_shader = R"(
+            #version 410 core
+            struct Light {
+                vec3 direction;
+                vec3 color;
+            };
+            flat in vec3 FlatNormal;
+            uniform Light light; // Direction of the light source (normalized)
+            out vec4 FragColor;
+            
+            void main() {
+                // Calculate grayscale intensity using the Lambertian reflectance model
+                float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
+                // Output as grayscale
+                FragColor = vec4(vec3(brightness), 1.0);
+            })"
+        },
+    },
+    {
+        ShadingType::BLINN_PHONG_SHADING,
+        ShaderSource {
+            .vertex_shader = R"(
+            #version 410 core
+            layout (location = 0) in vec3 aPos;
+            layout (location = 1) in vec3 aNormal;
+            layout (location = 2) in vec2 aTexCoords;
+
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            out vec3 FragPos;
+            out vec3 Normal;
+            out vec2 TexCoords;
+
+            void main() {
+                FragPos = vec3(model * vec4(aPos, 1.0));
+                Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
+                TexCoords = aTexCoords;
+                gl_Position = projection * view * vec4(FragPos, 1.0);
+            })",
+
+            .fragment_shader = R"(
+            #version 410 core
+            struct Light {
+                vec3 direction;
+                vec3 color;
+            };
+
+            in vec3 FragPos;
+            in vec3 Normal;
+            in vec2 TexCoords;
+
+            uniform sampler2D texture_diffuse1;
+            uniform Light light;
+            uniform vec3 cameraPos;
+            uniform float ambientStrength;
+            uniform bool useBlinn;
+
+            out vec4 FragColor;
+
+            void main() {
+                vec3 color = texture(texture_diffuse1, TexCoords).rgb;
+                
+                // ambient
+                vec3 ambient = ambientStrength * color;
+                // diffuse
+                vec3 lightDir = normalize(-light.direction);
+                vec3 normal = normalize(Normal);
+                float diff = max(dot(lightDir, normal), 0.0);
+                vec3 diffuse = diff * color;
+                // specular
+                vec3 viewDir = normalize(cameraPos - FragPos);
+                vec3 reflectionDir = reflect(-lightDir, normal);
+                float spec = 0.f;
+                if (useBlinn) {
+                    vec3 halfDir = normalize(lightDir + viewDir);
+                    spec = pow(max(dot(normal, halfDir), 0.0), 32.);
+                } else {
+                    vec3 reflectDir = reflect(-lightDir, normal);
+                    spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
+                }
+                vec3 specular = light.color * spec;
+                FragColor = vec4(ambient + diffuse + specular, 1.0);
+            })"
+        }
+    }
+};
+
+// clang-format on
 Shader::Shader(ShadingType type)
 {
-    // Find the shader source corresponding to the provided ShadingType
-    auto const it = std::ranges::find_if(shader_sources,
-        [type](ShaderSource const& source) {
-            return source.type == type;
-        });
-
-    if (it == std::end(shader_sources)) {
-        throw std::invalid_argument("Invalid ShadingType provided.");
-    }
-
     // Extract vertex and fragment shader code
-    char const* vertex_code = it->vertex_shader;
-    char const* fragment_code = it->fragment_shader;
+    char const* vertex_code = shader_sources.at(type).vertex_shader;
+    char const* fragment_code = shader_sources.at(type).fragment_shader;
 
     // Compile shaders and set up the shader program
     auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_code);
