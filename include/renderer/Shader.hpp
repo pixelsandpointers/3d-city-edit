@@ -15,6 +15,8 @@
  *   - `ambient_strength`: A floating-point value specifying the intensity of global ambient
  *     lighting applied on objects. This affects the base overall brightness independent of
  *     direct light sources.
+ *   - `specularity_factor`: A floating-point value scaling the intensity of specular reflection
+ *     on the object. Will be clamped in range [0, 1].
  *   - `use_blinn`: A boolean flag to enable or disable the Blinn-Phong shading model.
  *     When set to `true`, the Blinn modification of the Phong specular reflection is used,
  *     resulting in a more efficient calculation of highlights.
@@ -33,9 +35,10 @@
  */
 struct Uniforms {
     float ambient_strength{0.1f};
+    float specularity_factor{0.25f};
     bool use_blinn{true};
     struct {
-        glm::vec4 direction{1.f};
+        glm::vec4 direction{10000.f, 0.f, -10.f, 0.f};
         glm::vec3 color{0.7f, 0.4f, 0.1f};
     } light;
 };

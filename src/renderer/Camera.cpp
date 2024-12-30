@@ -30,13 +30,13 @@ void Camera::draw(Shader& shader,
     shader.set_vec3("cameraPos", position);
     shader.set_bool("useBlinn", uniforms.use_blinn);
     shader.set_float("ambientStrength", uniforms.ambient_strength);
+    shader.set_float("specularityFactor", uniforms.specularity_factor);
+    shader.set_vec3("light.direction", glm::vec3{light_pos});
     shader.set_vec3("light.color", uniforms.light.color);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
         for (auto const& mesh : node_data.meshes) {
             shader.set_mat4("model", transform_matrix);
-            // set light position relative to transformation matrix of the model
-            shader.set_vec3("light.direction", glm::vec3{transform_matrix * light_pos});
             mesh.draw(shader);
         }
     });

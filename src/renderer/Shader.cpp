@@ -5,7 +5,6 @@
 #include <sstream>
 #include <unordered_map>
 
-// clang-format off
 /**
  * @brief Collection of shader sources for different shading techniques.
  *
@@ -31,11 +30,9 @@
  * within a rendering engine. The shaders are written in GLSL, version 4.10, and are designed
  * to operate in OpenGL rendering pipelines.
  */
-const std::unordered_map<ShadingType, ShaderSource> shader_sources
-{
-    {
-        ShadingType::ALBEDO_SHADING,
-        ShaderSource {
+std::unordered_map<ShadingType, ShaderSource> const shader_sources{
+    {ShadingType::ALBEDO_SHADING,
+        ShaderSource{
             .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
@@ -60,19 +57,17 @@ const std::unordered_map<ShadingType, ShaderSource> shader_sources
             uniform sampler2D texture_diffuse1;
             void main() {
                 FragColor = texture(texture_diffuse1, TexCoords);
-            })"
-        }
-    },
+            })"}},
     {
         ShadingType::SOLID_SHADING,
-        ShaderSource {
+        ShaderSource{
             .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;       // Vertex position
             layout (location = 1) in vec3 aNormal;    // Vertex normal
             layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
 
-            flat out vec3 FlatNormal;                 // Pass the face normal to the fragment shader (not interpolated)
+            out vec3 FlatNormal;                 // Pass the face normal to the fragment shader (not interpolated)
             uniform mat4 model;
             uniform mat4 view;
             uniform mat4 projection;
@@ -91,7 +86,7 @@ const std::unordered_map<ShadingType, ShaderSource> shader_sources
                 vec3 direction;
                 vec3 color;
             };
-            flat in vec3 FlatNormal;
+            in vec3 FlatNormal;
             uniform Light light; // Direction of the light source (normalized)
             out vec4 FragColor;
             
@@ -100,12 +95,11 @@ const std::unordered_map<ShadingType, ShaderSource> shader_sources
                 float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
                 // Output as grayscale
                 FragColor = vec4(vec3(brightness), 1.0);
-            })"
-        },
+            })"},
     },
     {
         ShadingType::BLINN_PHONG_SHADING,
-        ShaderSource {
+        ShaderSource{
             .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
@@ -140,6 +134,7 @@ const std::unordered_map<ShadingType, ShaderSource> shader_sources
 
             uniform sampler2D texture_diffuse1;
             uniform Light light;
+            uniform float specularityFactor;
             uniform vec3 cameraPos;
             uniform float ambientStrength;
             uniform bool useBlinn;
@@ -167,14 +162,14 @@ const std::unordered_map<ShadingType, ShaderSource> shader_sources
                     vec3 reflectDir = reflect(-lightDir, normal);
                     spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
                 }
+                spec *= clamp(specularityFactor, 0.f, 1.f);
                 vec3 specular = light.color * spec;
                 FragColor = vec4(ambient + diffuse + specular, 1.0);
-            })"
-        }
-    }
+            })",
+        },
+    },
 };
 
-// clang-format on
 Shader::Shader(ShadingType type)
 {
     // Extract vertex and fragment shader code
@@ -191,6 +186,7 @@ Shader::Shader(ShadingType type)
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 }
+
 Shader::Shader(char const* vertex_path, char const* fragment_path)
 {
     std::string vertex_code;
