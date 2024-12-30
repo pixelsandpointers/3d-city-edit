@@ -3,11 +3,10 @@
 
 constexpr auto imgui_treenode_leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-ObjectSelectionTree::ObjectSelectionTree(){}
+ObjectSelectionTree::ObjectSelectionTree() = default;
 
-
-
-void ObjectSelectionTree::traverse_nodes(InstancedNode const& root){
+void ObjectSelectionTree::traverse_nodes(InstancedNode const& root)
+{
     for (auto const& child : root.children) {
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
@@ -24,10 +23,10 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode const& root){
             ImGui::TreePop();
         }
     }
-
 }
 
-void ObjectSelectionTree::render(InstancedNode const& root){
+void ObjectSelectionTree::render(InstancedNode const& root)
+{
     ImGui::Begin("Object Tree");
 
     ImGui::BeginTable("table0", 1);
@@ -36,4 +35,3 @@ void ObjectSelectionTree::render(InstancedNode const& root){
     ImGui::EndTable();
     ImGui::End();
 }
-
