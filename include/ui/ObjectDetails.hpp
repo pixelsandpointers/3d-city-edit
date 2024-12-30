@@ -3,5 +3,4 @@
 struct ObjectDetails {
     ObjectDetails();
     void render();
-
 };
