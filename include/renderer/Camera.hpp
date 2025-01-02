@@ -14,6 +14,7 @@ struct Framebuffer {
 
 enum class ViewingMode {
     SOLID,
+    ALBEDO,
     RENDERED,
     WIREFRAME,
 };
