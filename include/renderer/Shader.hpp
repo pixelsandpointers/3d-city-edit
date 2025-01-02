@@ -17,9 +17,8 @@
  *     direct light sources.
  *   - `specularity_factor`: A floating-point value scaling the intensity of specular reflection
  *     on the object. Will be clamped in range [0, 1].
- *   - `use_blinn`: A boolean flag to enable or disable the Blinn-Phong shading model.
- *     When set to `true`, the Blinn modification of the Phong specular reflection is used,
- *     resulting in a more efficient calculation of highlights.
+ *   - `shininess`: A floating-point value for the specularity exponent.
+ *   - `gamma`: A floating-point value for the gamma correction.
  *
  * Nested inside the struct is the `Light` structure, which represents the properties of a
  * directional light source used in the scene. This includes attributes to define:
@@ -29,17 +28,20 @@
  *   - `color`: A 3-component vector defining the RGB composition of the light's color. Each
  *     component ranges from 0.0 to 1.0 and determines the relative intensity of the light's
  *     red, green, and blue output.
+ *   - `power`: A constant floating-point value for the light intensity.
  *
  * This struct is intended to be updated dynamically and passed as uniform data to a GPU shader
  * program to influence the appearance of geometry during rendering.
  */
 struct Uniforms {
-    float ambient_strength{0.1f};
+    float ambient_strength{0.6f};
     float specularity_factor{0.25f};
-    bool use_blinn{true};
+    float shininess{16.f};
+    float gamma{2.2f};
     struct {
         glm::vec4 direction{10000.f, 0.f, -10.f, 0.f};
         glm::vec3 color{0.7f, 0.4f, 0.1f};
+        float const power{40.f};
     } light;
 };
 
@@ -52,9 +54,9 @@ struct Uniforms {
  *
  * @details The available shading types include:
  *   - ALBEDO_SHADING: Only assigns the texture color to the polygon.
- *   - FLAT_SHADING: A shading technique where a single color is applied per polygon.
  *   - BLINN_PHONG_SHADING: An extension of the Phong shading model that incorporates
  *     a more computationally efficient specular reflection calculation.
+ *   - SOLID_SHADING: A shading technique for grayscale and diffuse factor.
  *
  * This enumeration is commonly employed for selecting and managing the shading
  * pipeline in rendering engines, influencing the appearance of graphical objects.

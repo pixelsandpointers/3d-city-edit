@@ -57,7 +57,7 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
             uniform sampler2D texture_diffuse1;
             void main() {
                 FragColor = texture(texture_diffuse1, TexCoords);
-            })"}},
+            },)"}},
     {
         ShadingType::SOLID_SHADING,
         ShaderSource{
@@ -89,13 +89,13 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
             in vec3 FlatNormal;
             uniform Light light; // Direction of the light source (normalized)
             out vec4 FragColor;
-            
+
             void main() {
                 // Calculate grayscale intensity using the Lambertian reflectance model
                 float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
                 // Output as grayscale
                 FragColor = vec4(vec3(brightness), 1.0);
-            })"},
+            },)"},
     },
     {
         ShadingType::BLINN_PHONG_SHADING,
@@ -126,6 +126,7 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
             struct Light {
                 vec3 direction;
                 vec3 color;
+                float power;
             };
 
             in vec3 FragPos;
@@ -134,37 +135,37 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
 
             uniform sampler2D texture_diffuse1;
             uniform Light light;
-            uniform float specularityFactor;
             uniform vec3 cameraPos;
             uniform float ambientStrength;
-            uniform bool useBlinn;
+            uniform float shininess;
+            uniform float gamma;
 
             out vec4 FragColor;
 
             void main() {
-                vec3 color = texture(texture_diffuse1, TexCoords).rgb;
-                
-                // ambient
-                vec3 ambient = ambientStrength * color;
-                // diffuse
-                vec3 lightDir = normalize(-light.direction);
+                vec3 tex = texture(texture_diffuse1, TexCoords).rgb;
                 vec3 normal = normalize(Normal);
+                float dist = dot(light.direction, light.direction);
+                float spec = 0.;
+                vec3 lightDir = normalize(-light.direction);
+                float lambertian = max(dot(lightDir, normal), 0.);
+
+                // ambient
+                vec3 ambient = ambientStrength * tex;
+
+                // diffuse
                 float diff = max(dot(lightDir, normal), 0.0);
-                vec3 diffuse = diff * color;
+                vec3 diffuse = diff * tex;
+
                 // specular
                 vec3 viewDir = normalize(cameraPos - FragPos);
                 vec3 reflectionDir = reflect(-lightDir, normal);
-                float spec = 0.f;
-                if (useBlinn) {
-                    vec3 halfDir = normalize(lightDir + viewDir);
-                    spec = pow(max(dot(normal, halfDir), 0.0), 32.);
-                } else {
-                    vec3 reflectDir = reflect(-lightDir, normal);
-                    spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
-                }
-                spec *= clamp(specularityFactor, 0.f, 1.f);
+                vec3 halfDir = normalize(lightDir + viewDir);
+                spec = pow(max(dot(normal, halfDir), 0.0), shininess/4.);
                 vec3 specular = light.color * spec;
-                FragColor = vec4(ambient + diffuse + specular, 1.0);
+                vec3 color = ambient + diffuse * lambertian * light.color * light.power / dist + spec * light.color * light.power / dist;
+                vec3 gammaCorrection = pow(color, vec3(1. / gamma));
+                FragColor = vec4(gammaCorrection, 1.);
             })",
         },
     },

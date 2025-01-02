@@ -77,7 +77,7 @@ int main()
     std::cout << path.string().c_str() << std::endl;
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
-    auto camera_controller = CameraController{CameraController::Type::ORBIT, glm::vec3{0.f, 0.f, -3.f}};
+    auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = AssetManager::get_model(path);
     if (!obj) {
         std::abort();
@@ -106,6 +106,9 @@ int main()
     switch (viewing_mode) {
     case ViewingMode::WIREFRAME:
         shader = Shader(ShadingType::SOLID_SHADING);
+        break;
+    case ViewingMode::ALBEDO:
+        shader = Shader(ShadingType::ALBEDO_SHADING);
         break;
     case ViewingMode::SOLID:
         shader = Shader(ShadingType::SOLID_SHADING);
