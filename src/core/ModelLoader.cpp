@@ -24,35 +24,39 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
     std::replace(texture_path_string.begin(), texture_path_string.end(), '\\', '/');
     auto texture_path = std::filesystem::path{texture_path_string};
 
-    // 1. Attempt: maybe the provided path is correct.
-    if (std::filesystem::exists(directory / texture_path)) {
-        return directory / texture_path;
-    }
-
-    // 2. Attempt: maybe the file is in a subdirectory.
-    auto search_in_subdirectory = [&](std::string filename) -> std::optional<std::filesystem::path> {
-        for (auto const& entry : std::filesystem::directory_iterator{directory}) {
-            if (std::filesystem::exists(entry.path() / filename)) {
-                return entry.path() / filename;
-            }
+    // TODO: this fails on Windows without try/catch - requires investigation
+    try {
+        // 1. Attempt: maybe the provided path is correct.
+        if (std::filesystem::exists(directory / texture_path)) {
+            return directory / texture_path;
         }
-        return {};
-    };
 
-    auto filename = texture_path.filename().string();
-    if (auto optional_path = search_in_subdirectory(filename); optional_path.has_value()) {
-        return optional_path.value();
-    }
+        // 2. Attempt: maybe the file is in a subdirectory.
+        auto search_in_subdirectory = [&](std::string filename) -> std::optional<std::filesystem::path> {
+            for (auto const &entry: std::filesystem::directory_iterator{directory}) {
+                if (std::filesystem::exists(entry.path() / filename)) {
+                    return entry.path() / filename;
+                }
+            }
+            return {};
+        };
 
-    // 3. Attempt: maybe the file is in a subdirectory and it ends on '..bmp', but the file ends on '_.bmp' (wtf?).
-    if (filename.ends_with("..bmp")) {
-        filename.erase(filename.size() - 5);
-        filename += "_.bmp";
+        auto filename = texture_path.filename().string();
         if (auto optional_path = search_in_subdirectory(filename); optional_path.has_value()) {
             return optional_path.value();
         }
-    }
 
+        // 3. Attempt: maybe the file is in a subdirectory and it ends on '..bmp', but the file ends on '_.bmp' (wtf?).
+        if (filename.ends_with("..bmp")) {
+            filename.erase(filename.size() - 5);
+            filename += "_.bmp";
+            if (auto optional_path = search_in_subdirectory(filename); optional_path.has_value()) {
+                return optional_path.value();
+            }
+        }
+    } catch (const std::exception e) {
+        std::cerr << "Failed to guess texture path: " << e.what() << "\n";
+    }
     // Fail
     return {};
 }
