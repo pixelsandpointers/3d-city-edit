@@ -31,9 +31,9 @@
  * to operate in OpenGL rendering pipelines.
  */
 std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
-        {ViewingMode::ALBEDO,
-                ShaderSource{
-                        .vertex_shader = R"(
+    {ViewingMode::ALBEDO,
+        ShaderSource{
+            .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
             layout (location = 1) in vec3 aNormal;
@@ -50,7 +50,7 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
                 gl_Position = projection * view * model * vec4(aPos, 1.0);
             })",
 
-                        .fragment_shader = R"(
+            .fragment_shader = R"(
             #version 410 core
             out vec4 FragColor;
             in vec2 TexCoords;
@@ -58,10 +58,10 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             void main() {
                 FragColor = texture(texture_diffuse1, TexCoords);
             })"}},
-        {
-         ViewingMode::SOLID,
-                ShaderSource{
-                        .vertex_shader = R"(
+    {
+        ViewingMode::SOLID,
+        ShaderSource{
+            .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;       // Vertex position
             layout (location = 1) in vec3 aNormal;    // Vertex normal
@@ -98,7 +98,7 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             })"},
     },
     {
-         ViewingMode::RENDERED,
+        ViewingMode::RENDERED,
         ShaderSource{
             .vertex_shader = R"(
             #version 410 core
@@ -174,8 +174,8 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
 Shader::Shader(ViewingMode mode)
 {
     // Extract vertex and fragment shader code
-    char const *vertex_code = shader_sources.at(mode).vertex_shader;
-    char const *fragment_code = shader_sources.at(mode).fragment_shader;
+    char const* vertex_code = shader_sources.at(mode).vertex_shader;
+    char const* fragment_code = shader_sources.at(mode).fragment_shader;
 
     // Compile shaders and set up the shader program
     auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_code);
