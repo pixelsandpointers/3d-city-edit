@@ -76,10 +76,10 @@ int main()
     Input::init(window);
 
     // assuming we set the CWD to root
-    auto path = std::filesystem::current_path();
+    auto path = std::filesystem::current_path() / "assets";
     std::cout << path.string().c_str() << std::endl;
     Project::load(path);
-    path.append("assets/Models/TUD_Innenstadt.FBX");
+    path.append("Models/TUD_Innenstadt.FBX");
 
     // INIT UI
     ObjectDetails object_details_pane{};
@@ -124,6 +124,8 @@ int main()
         Input::update();
 
         camera_controller.update(delta_time);
+
+        Project::get_current()->rebuild_fs_cache_timed(current_frame);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
