@@ -5,6 +5,7 @@
 #include "renderer/Shader.hpp"
 #include "ui/ObjectDetails.hpp"
 #include "ui/ObjectSelectionTree.hpp"
+#include "ui/ShaderUniformPane.hpp"
 
 #include <filesystem>
 #include <glfw.h>
@@ -15,9 +16,9 @@
 
 Framebuffer framebuffer{
     .id = 0,
-    .width = 640,
-    .height = 480,
-    .aspect = 640.f / 480.f};
+        .width = 1920,
+        .height = 1080,
+        .aspect = 1920.f / 1080.f};
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -45,7 +46,7 @@ int main()
     glfwWindowHintString(GLFW_X11_CLASS_NAME, "3d");
     glfwWindowHintString(GLFW_WAYLAND_APP_ID, "3d");
 
-    auto* window = glfwCreateWindow(framebuffer.width, framebuffer.height, "Hello World", nullptr, nullptr);
+    auto *window = glfwCreateWindow(framebuffer.width, framebuffer.height, "3D Street Editor", nullptr, nullptr);
     if (!window) {
         std::cout << "glfwCreateWindow() failed\n";
         glfwTerminate();
@@ -79,8 +80,11 @@ int main()
     std::cout << path.string().c_str() << std::endl;
     path.append("assets/Models/TUD_Innenstadt.FBX");
 
-    ObjectDetails object_details_pane = ObjectDetails{};
-    ObjectSelectionTree object_selection_tree = ObjectSelectionTree{};
+    // INIT UI
+    ObjectDetails object_details_pane{};
+    ObjectSelectionTree object_selection_tree{};
+    ShaderUniformPane shader_uniform_pane{};
+    auto viewing_mode = shader_uniform_pane.viewing_mode;
 
     auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = AssetManager::get_model(path);
@@ -94,7 +98,6 @@ int main()
         .scale = glm::vec3{1.0f},
     };
 
-    Shader shader(ShadingType::BLINN_PHONG_SHADING);
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
 
@@ -104,33 +107,19 @@ int main()
 
     // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
     // so they can be adjusted in global scope e.g. the GUI
-    static Uniforms uniforms{};
-
-    // TODO: provide a toggle in the UI to change viewing mode, so people can jump from Wireframe to Solid to Rendered views.
-    ViewingMode viewing_mode = ViewingMode::RENDERED;
-    switch (viewing_mode) {
-    case ViewingMode::WIREFRAME:
-        shader = Shader(ShadingType::SOLID_SHADING);
-        break;
-    case ViewingMode::ALBEDO:
-        shader = Shader(ShadingType::ALBEDO_SHADING);
-        break;
-    case ViewingMode::SOLID:
-        shader = Shader(ShadingType::SOLID_SHADING);
-        break;
-    case ViewingMode::RENDERED:
-        shader = Shader(ShadingType::BLINN_PHONG_SHADING);
-        break;
-    default:
-        std::cerr << "Invalid viewing mode. Defaulting to lid.\n";
-        shader = Shader(ShadingType::BLINN_PHONG_SHADING);
-        break;
-    }
+    Shader shader(viewing_mode);
 
     while (!glfwWindowShouldClose(window)) {
         auto current_frame = glfwGetTime();
         auto delta_time = current_frame - last_frame;
         last_frame = current_frame;
+
+        // Update shader if we change it in the UI
+        if (viewing_mode != shader_uniform_pane.viewing_mode) {
+            shader = Shader(shader_uniform_pane.viewing_mode);
+            viewing_mode = shader_uniform_pane.viewing_mode;
+            // BUG: If we are changing shaders, the projection falls apart
+        }
 
         Input::update();
 
@@ -140,22 +129,22 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        if (viewing_mode == ViewingMode::WIREFRAME) {
+        if (shader_uniform_pane.draw_wireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
-        camera_controller.camera->draw(shader, uniforms, framebuffer, scene_instance);
+        camera_controller.camera->draw(shader, shader_uniform_pane.uniforms, framebuffer, scene_instance);
 
-        // Start the Dear ImGui frame
+        // Render GUI
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        // ImGui::ShowDemoWindow(); // Show demo window! :)
 
         object_details_pane.render();
         object_selection_tree.render(scene_instance);
+        shader_uniform_pane.render();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

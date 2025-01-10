@@ -45,26 +45,27 @@ struct Uniforms {
     } light;
 };
 
+
 /**
  * @brief Defines the types of shading techniques available in rendering.
  *
- * The `ShadingType` enumeration categorizes commonly used shading methods in
+ * The `ViewingMode` enumeration categorizes commonly used shading methods in
  * graphical rendering. Each value corresponds to a specific shading algorithm
  * utilized to achieve different visual effects during the rendering process.
  *
  * @details The available shading types include:
- *   - ALBEDO_SHADING: Only assigns the texture color to the polygon.
- *   - BLINN_PHONG_SHADING: An extension of the Phong shading model that incorporates
+ *   - ALBEDO: Only assigns the texture color to the polygon.
+ *   - SOLID: A shading technique for grayscale and diffuse factor.
+ *   - RENDERED: An extension of the Phong shading model that incorporates
  *     a more computationally efficient specular reflection calculation.
- *   - SOLID_SHADING: A shading technique for grayscale and diffuse factor.
  *
  * This enumeration is commonly employed for selecting and managing the shading
  * pipeline in rendering engines, influencing the appearance of graphical objects.
  */
-enum class ShadingType {
-    ALBEDO_SHADING,
-    BLINN_PHONG_SHADING,
-    SOLID_SHADING,
+enum class ViewingMode {
+    ALBEDO,
+    SOLID,
+    RENDERED,
 };
 
 /**
@@ -112,7 +113,8 @@ public:
         PROGRAM,
     };
     Shader(char const* vertex_path, char const* fragment_path);
-    Shader(ShadingType type);
+
+    Shader(ViewingMode mode);
     unsigned int m_id;
     void use() const;
     void set_bool(char const* name, bool value) const;
