@@ -16,9 +16,9 @@
 
 Framebuffer framebuffer{
     .id = 0,
-        .width = 1920,
-        .height = 1080,
-        .aspect = 1920.f / 1080.f};
+    .width = 1920,
+    .height = 1080,
+    .aspect = 1920.f / 1080.f};
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -46,7 +46,7 @@ int main()
     glfwWindowHintString(GLFW_X11_CLASS_NAME, "3d");
     glfwWindowHintString(GLFW_WAYLAND_APP_ID, "3d");
 
-    auto *window = glfwCreateWindow(framebuffer.width, framebuffer.height, "3D Street Editor", nullptr, nullptr);
+    auto* window = glfwCreateWindow(framebuffer.width, framebuffer.height, "3D Street Editor", nullptr, nullptr);
     if (!window) {
         std::cout << "glfwCreateWindow() failed\n";
         glfwTerminate();

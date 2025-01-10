@@ -1,34 +1,31 @@
 #include "ui/ShaderUniformPane.hpp"
 
-void ShaderUniformPane::render() {
+void ShaderUniformPane::render()
+{
     ImGui::Begin("Shading and Lighting Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
     // Draw dropdown to choose between shading modes
-    const std::unordered_map<const char *, ViewingMode> shading_mode_map{
-            {"Albedo",   ViewingMode::ALBEDO},
-            {"Solid",    ViewingMode::SOLID},
-            {"Rendered", ViewingMode::RENDERED},
-    };
-    static const char *current_mode = "Rendered";
+    std::unordered_map<ViewingMode, char const*> const shading_mode_map{
+        {ViewingMode::ALBEDO, "Albedo"},
+        {ViewingMode::SOLID, "Solid"},
+        {ViewingMode::RENDERED, "Rendered"}};
 
     ImGui::SeparatorText("Shading Mode");
 
-    if (ImGui::BeginCombo("", current_mode)) {
-        for (const auto &[name, mode]: shading_mode_map) {
-            if (ImGui::Selectable(name, name == current_mode))
-                current_mode = name;
-            if (name == current_mode)
+    if (ImGui::BeginCombo("", shading_mode_map.at(viewing_mode))) {
+        for (auto const& [mode, name] : shading_mode_map) {
+            if (ImGui::Selectable(name, viewing_mode == mode))
+                viewing_mode = mode;
+            if (viewing_mode == mode)
                 ImGui::SetItemDefaultFocus();
-            viewing_mode = shading_mode_map.at(current_mode);
         }
         ImGui::EndCombo();
     }
 
     // Wireframe button
-    if (ImGui::Button("Toggle Wireframe")) {
-        draw_wireframe = !draw_wireframe;
-    }
+    ImGui::Checkbox("Draw wireframe", &draw_wireframe);
 
+    // Lighting Controls
     ImGui::SeparatorText("Lighting Controls");
     ImGui::SliderFloat("Ambient Light Strength", &uniforms.ambient_strength, 0.0f, 1.0f);
     ImGui::SliderFloat("Light Strength", &uniforms.light.power, 0.0f, 100.0f);

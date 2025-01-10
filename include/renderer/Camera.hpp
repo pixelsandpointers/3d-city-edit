@@ -14,7 +14,6 @@ struct Framebuffer {
     float aspect;
 };
 
-
 class Camera {
 public:
     // camera Attributes

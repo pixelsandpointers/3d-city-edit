@@ -45,7 +45,6 @@ struct Uniforms {
     } light;
 };
 
-
 /**
  * @brief Defines the types of shading techniques available in rendering.
  *
