@@ -10,19 +10,19 @@
  *
  * The `shader_sources` is a constant array containing the GLSL vertex and fragment shader
  * source codes for various shading techniques. Each entry in the array corresponds to a
- * particular `ShadingType` and provides a pair of strings: the vertex shader source and
+ * particular `ViewingMode` and provides a pair of strings: the vertex shader source and
  * the matching fragment shader source. These shaders define the behavior of the rendering
  * pipeline when a specific shading technique is used.
  *
  * @details The supported shading techniques and corresponding shader implementations include:
- *   - `ShadingType::ALBEDO_SHADING`: Implements basic texture mapping, computing
+ *   - `ViewingMode::ALBEDO_SHADING`: Implements basic texture mapping, computing
  *     the final fragment color by sampling a diffuse texture applied to the geometry.
  *     No lighting calculations are performed.
- *   - `ShadingType::FLAT_SHADING`: Provides flat shading by computing face normals,
+ *   - `ViewingMode::FLAT_SHADING`: Provides flat shading by computing face normals,
  *     resulting in a uniform color for each surface, and applies basic lighting models
  *     including diffuse and ambient components. The normals are not interpolated across
  *     the surface.
- *   - `ShadingType::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
+ *   - `ViewingMode::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
  *     the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
  *     highlights while maintaining visual quality.
  *
@@ -30,10 +30,10 @@
  * within a rendering engine. The shaders are written in GLSL, version 4.10, and are designed
  * to operate in OpenGL rendering pipelines.
  */
-std::unordered_map<ShadingType, ShaderSource> const shader_sources{
-    {ShadingType::ALBEDO_SHADING,
-        ShaderSource{
-            .vertex_shader = R"(
+std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
+        {ViewingMode::ALBEDO,
+                ShaderSource{
+                        .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;
             layout (location = 1) in vec3 aNormal;
@@ -50,7 +50,7 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
                 gl_Position = projection * view * model * vec4(aPos, 1.0);
             })",
 
-            .fragment_shader = R"(
+                        .fragment_shader = R"(
             #version 410 core
             out vec4 FragColor;
             in vec2 TexCoords;
@@ -58,10 +58,10 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
             void main() {
                 FragColor = texture(texture_diffuse1, TexCoords);
             },)"}},
-    {
-        ShadingType::SOLID_SHADING,
-        ShaderSource{
-            .vertex_shader = R"(
+        {
+         ViewingMode::SOLID,
+                ShaderSource{
+                        .vertex_shader = R"(
             #version 410 core
             layout (location = 0) in vec3 aPos;       // Vertex position
             layout (location = 1) in vec3 aNormal;    // Vertex normal
@@ -98,7 +98,7 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
             },)"},
     },
     {
-        ShadingType::BLINN_PHONG_SHADING,
+         ViewingMode::RENDERED,
         ShaderSource{
             .vertex_shader = R"(
             #version 410 core
@@ -171,11 +171,11 @@ std::unordered_map<ShadingType, ShaderSource> const shader_sources{
     },
 };
 
-Shader::Shader(ShadingType type)
+Shader::Shader(ViewingMode mode)
 {
     // Extract vertex and fragment shader code
-    char const* vertex_code = shader_sources.at(type).vertex_shader;
-    char const* fragment_code = shader_sources.at(type).fragment_shader;
+    char const *vertex_code = shader_sources.at(mode).vertex_shader;
+    char const *fragment_code = shader_sources.at(mode).fragment_shader;
 
     // Compile shaders and set up the shader program
     auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_code);

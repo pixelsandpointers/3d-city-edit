@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/Scene.hpp"
+#include "renderer/Shader.hpp"
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,12 +14,6 @@ struct Framebuffer {
     float aspect;
 };
 
-enum class ViewingMode {
-    SOLID,
-    ALBEDO,
-    RENDERED,
-    WIREFRAME,
-};
 
 class Camera {
 public:
