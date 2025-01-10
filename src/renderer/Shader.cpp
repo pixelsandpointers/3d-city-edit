@@ -57,7 +57,7 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             uniform sampler2D texture_diffuse1;
             void main() {
                 FragColor = texture(texture_diffuse1, TexCoords);
-            },)"}},
+            })"}},
         {
          ViewingMode::SOLID,
                 ShaderSource{
@@ -95,7 +95,7 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
                 float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
                 // Output as grayscale
                 FragColor = vec4(vec3(brightness), 1.0);
-            },)"},
+            })"},
     },
     {
          ViewingMode::RENDERED,

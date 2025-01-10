@@ -116,9 +116,8 @@ int main()
 
         // Update shader if we change it in the UI
         if (viewing_mode != shader_uniform_pane.viewing_mode) {
-            shader = Shader(shader_uniform_pane.viewing_mode);
             viewing_mode = shader_uniform_pane.viewing_mode;
-            // BUG: If we are changing shaders, the projection falls apart
+            shader = Shader(viewing_mode);
         }
 
         Input::update();

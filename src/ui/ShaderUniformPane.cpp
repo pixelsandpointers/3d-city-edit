@@ -19,22 +19,20 @@ void ShaderUniformPane::render() {
                 current_mode = name;
             if (name == current_mode)
                 ImGui::SetItemDefaultFocus();
+            viewing_mode = shading_mode_map.at(current_mode);
         }
         ImGui::EndCombo();
     }
-    // TODO: expose current ViewingMode to Uniforms
-    viewing_mode = shading_mode_map.at(current_mode);
-
 
     // Wireframe button
     if (ImGui::Button("Toggle Wireframe")) {
         draw_wireframe = !draw_wireframe;
     }
 
-    // TODO: Lighting controls - enable change of position, color and ambient strength
     ImGui::SeparatorText("Lighting Controls");
-    ImGui::SliderFloat("Ambient Light", &uniforms.ambient_strength, 0.0f, 1.0f);
-    ImGui::SliderFloat3("Light Direction", &uniforms.light.direction[0], .0f, 100.0f);
+    ImGui::SliderFloat("Ambient Light Strength", &uniforms.ambient_strength, 0.0f, 1.0f);
+    ImGui::SliderFloat("Light Strength", &uniforms.light.power, 0.0f, 100.0f);
+    ImGui::SliderFloat3("Light Direction", &uniforms.light.direction[0], .0f, 10.0f);
     ImGui::ColorEdit3("Light Color", &uniforms.light.color[0]);
 
     ImGui::End();
