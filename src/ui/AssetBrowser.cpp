@@ -131,47 +131,50 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
 
 void AssetBrowser::render()
 {
-    ImGui::Begin("Asset Browser");
-    auto available_region = ImGui::GetContentRegionAvail();
+    if (ImGui::Begin("Asset Browser")) {
+        auto available_region = ImGui::GetContentRegionAvail();
 
-    ImGui::BeginChild("tree", ImVec2{available_region.x * 0.75f, available_region.y}, ImGuiChildFlags_ResizeX);
-    if (ImGui::BeginTable("assetbrowser_directory_tree", 1)) {
-        traverse_directory(*Project::get_current()->get_fs_cache());
-        ImGui::EndTable();
-    }
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    ImGui::BeginChild("preview");
-    prepare_preview();
-    ImGui::Text("%s", m_preview_name.c_str());
-    if (m_preview_texture) {
-        ImGui::Image(m_preview_texture, ImVec2{static_cast<float>(m_model_preview_framebuffer.width), static_cast<float>(m_model_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
-    } else {
-        ImGui::Text("Preview placeholder");
-    }
-
-    if (m_selected_item.has_value()) {
-        if (auto* value = std::get_if<Node const*>(&m_selected_item.value()); value != nullptr) {
-            auto node = *value;
-            ImGui::Text("Model node");
-            ImGui::Text("Meshes: %zu", node->meshes.size());
-            ImGui::Text("Direct children: %zu", node->children.size());
+        if (ImGui::BeginChild("tree", ImVec2{available_region.x * 0.75f, available_region.y}, ImGuiChildFlags_ResizeX)) {
+            if (ImGui::BeginTable("assetbrowser_directory_tree", 1)) {
+                traverse_directory(*Project::get_current()->get_fs_cache());
+                ImGui::EndTable();
+            }
         }
-        if (auto* value = std::get_if<std::filesystem::path>(&m_selected_item.value()); value != nullptr) {
-            auto node = Project::get_current()->get_fs_cache(*value);
-            if (node && node->type == FSCacheNode::Type::TEXTURE) {
-                auto texture = Project::get_current()->get_texture(*value);
-                if (texture) {
-                    ImGui::Text("Filetype: ? Image"); // TODO: Get image format?
-                    ImGui::Text("Size: %d x %d", texture->width, texture->height);
-                    ImGui::Text("Channels: %d", texture->channels);
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        if (ImGui::BeginChild("preview")) {
+            prepare_preview();
+            ImGui::Text("%s", m_preview_name.c_str());
+            if (m_preview_texture) {
+                ImGui::Image(m_preview_texture, ImVec2{static_cast<float>(m_model_preview_framebuffer.width), static_cast<float>(m_model_preview_framebuffer.height)}, ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+            } else {
+                ImGui::Text("Preview placeholder");
+            }
+
+            if (m_selected_item.has_value()) {
+                if (auto* value = std::get_if<Node const*>(&m_selected_item.value()); value != nullptr) {
+                    auto node = *value;
+                    ImGui::Text("Model node");
+                    ImGui::Text("Meshes: %zu", node->meshes.size());
+                    ImGui::Text("Direct children: %zu", node->children.size());
+                }
+                if (auto* value = std::get_if<std::filesystem::path>(&m_selected_item.value()); value != nullptr) {
+                    auto node = Project::get_current()->get_fs_cache(*value);
+                    if (node && node->type == FSCacheNode::Type::TEXTURE) {
+                        auto texture = Project::get_current()->get_texture(*value);
+                        if (texture) {
+                            ImGui::Text("Filetype: ? Image"); // TODO: Get image format?
+                            ImGui::Text("Size: %d x %d", texture->width, texture->height);
+                            ImGui::Text("Channels: %d", texture->channels);
+                        }
+                    }
                 }
             }
         }
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
 
     ImGui::End();
 }
