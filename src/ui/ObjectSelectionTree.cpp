@@ -27,11 +27,12 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode const& root)
 
 void ObjectSelectionTree::render(InstancedNode const& root)
 {
-    ImGui::Begin("Object Tree");
+    if (ImGui::Begin("Object Tree")) {
+        if (ImGui::BeginTable("table0", 1)) {
+            traverse_nodes(root);
+        }
+        ImGui::EndTable();
+    }
 
-    ImGui::BeginTable("table0", 1);
-    traverse_nodes(root);
-
-    ImGui::EndTable();
     ImGui::End();
 }
