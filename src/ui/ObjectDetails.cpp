@@ -14,7 +14,6 @@ void ObjectDetails::render()
 {
     ImVec2 min_size(300, 150); // Base minimum size
     ImVec2 max_size(FLT_MAX, FLT_MAX); // No maximum size limit
-    char const* axis_labels[3] = {"X", "Y", "Z"};
 
     // Set the child window position to the right side of the parent window
     ImVec2 child_pos = ImVec2(0, 0);
