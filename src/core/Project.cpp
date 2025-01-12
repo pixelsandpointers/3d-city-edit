@@ -77,7 +77,7 @@ FSCacheNode* Project::get_fs_cache(std::filesystem::path path)
 Texture* Project::get_texture(std::filesystem::path path)
 {
     if (!path.is_absolute()) {
-        std::cout << "path " << path << " is not absolute";
+        std::cerr << "path " << path << " is not absolute";
         return nullptr;
     }
 
@@ -97,7 +97,7 @@ Texture* Project::get_texture(std::filesystem::path path)
 Node* Project::get_model(std::filesystem::path path)
 {
     if (!path.is_absolute()) {
-        std::cout << "path " << path << " is not absolute";
+        std::cerr << "path " << path << " is not absolute";
         return nullptr;
     }
 
@@ -117,7 +117,7 @@ Node* Project::get_model(std::filesystem::path path)
 Node* Project::get_cached_model(std::filesystem::path path)
 {
     if (!path.is_absolute()) {
-        std::cout << "path " << path << " is not absolute";
+        std::cerr << "path " << path << " is not absolute";
         return nullptr;
     }
 
