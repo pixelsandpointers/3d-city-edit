@@ -1,4 +1,5 @@
 #include "core/Input.hpp"
+#include <imgui.h>
 
 GLFWwindow* Input::m_window;
 glm::dvec2 Input::m_last_cursor_position;
@@ -47,4 +48,7 @@ glm::dvec2 Input::scroll_delta()
 void Input::scroll_callback(GLFWwindow*, double xoffset, double yoffset)
 {
     m_scroll_delta = glm::dvec2{xoffset, yoffset};
+
+    auto imgui_io = ImGui::GetIO();
+    imgui_io.AddMouseWheelEvent(xoffset, yoffset);
 }
