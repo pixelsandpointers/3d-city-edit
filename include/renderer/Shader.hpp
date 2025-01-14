@@ -34,14 +34,14 @@
  * program to influence the appearance of geometry during rendering.
  */
 struct Uniforms {
-    float ambient_strength{0.6f};
+    float ambient_strength{0.5f};
     float specularity_factor{0.25f};
     float shininess{16.f};
     float gamma{2.2f};
     struct {
         glm::vec4 direction{8.f, 0.f, 0.f, 0.f};
         glm::vec3 color{0.7f, 0.4f, 0.1f};
-        float power{40.f};
+        float power{0.8f};
     } light;
 };
 
