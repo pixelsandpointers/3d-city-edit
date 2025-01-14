@@ -28,7 +28,8 @@ void ShaderUniformPane::render()
         // Lighting Controls
         ImGui::SeparatorText("Lighting Controls");
         ImGui::SliderFloat("Ambient Light Strength", &uniforms.ambient_strength, 0.0f, 1.0f);
-        ImGui::SliderFloat("Light Strength", &uniforms.light.power, 0.0f, 100.0f);
+        ImGui::SliderFloat("Light Strength", &uniforms.light.power, 0.0f, 1.0f);
+        ImGui::SliderFloat("Specularity Factor", &uniforms.specularity_factor, 0.0f, 1.0f);
         ImGui::SliderFloat3("Light Direction", &uniforms.light.direction[0], .0f, 10.0f);
         ImGui::ColorEdit3("Light Color", &uniforms.light.color[0]);
     }

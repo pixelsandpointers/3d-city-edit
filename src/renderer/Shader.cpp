@@ -142,6 +142,7 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             uniform Light light;
             uniform vec3 cameraPos;
             uniform float ambientStrength;
+            uniform float specularityFactor;
             uniform float shininess;
             uniform float gamma;
 
@@ -150,25 +151,23 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             void main() {
                 vec3 tex = texture(texture_diffuse1, TexCoords).rgb;
                 vec3 normal = normalize(Normal);
-                float dist = dot(light.direction, light.direction);
-                float spec = 0.;
                 vec3 lightDir = normalize(-light.direction);
-                float lambertian = max(dot(lightDir, normal), 0.);
 
                 // ambient
                 vec3 ambient = ambientStrength * tex;
 
                 // diffuse
                 float diff = max(dot(lightDir, normal), 0.0);
-                vec3 diffuse = diff * tex;
+                vec3 diffuse = diff * light.power * tex;
 
                 // specular
                 vec3 viewDir = normalize(cameraPos - FragPos);
-                vec3 reflectionDir = reflect(-lightDir, normal);
                 vec3 halfDir = normalize(lightDir + viewDir);
-                spec = pow(max(dot(normal, halfDir), 0.0), shininess/4.);
-                vec3 specular = light.color * spec;
-                vec3 color = ambient + diffuse * lambertian * light.color * light.power / dist + spec * light.color * light.power / dist;
+                float spec = pow(max(dot(normal, halfDir), 0.0), shininess/4.);
+                vec3 specular = spec * specularityFactor * light.power * tex;
+
+                vec3 color = ambient + diffuse * light.color + specular * light.color;
+
                 vec3 gammaCorrection = pow(color, vec3(1. / gamma));
                 FragColor = vec4(gammaCorrection, 1.);
             })",
