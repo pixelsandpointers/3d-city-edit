@@ -24,6 +24,8 @@ struct FSCacheNode {
 class Project {
 public:
     std::filesystem::path root;
+    InstancedNode* selected_node{nullptr};
+    std::optional<InstancedNode> scene;
 
     static Project* get_current();
     static void load(std::filesystem::path);
