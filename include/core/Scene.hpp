@@ -27,6 +27,7 @@ struct InstancedNode {
     Node const* node;
     glm::mat4 model_matrix{0.0f};
     std::vector<InstancedNode> children;
+    std::string name;
 
     void traverse(std::function<void(glm::mat4, Node const&)>) const;
     void compute_transforms(glm::mat4 = glm::mat4{1.0f});

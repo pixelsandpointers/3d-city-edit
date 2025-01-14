@@ -38,6 +38,7 @@ InstancedNode Node::instanciate() const
         .node = this,
         .model_matrix = glm::mat4{},
         .children = {},
+        .name = name,
     };
 
     for (auto const& child : children) {

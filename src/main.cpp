@@ -80,6 +80,7 @@ int main()
     auto path = std::filesystem::current_path() / "assets";
     std::cout << path.string().c_str() << std::endl;
     Project::load(path);
+    auto project = Project::get_current();
     path.append("Models/TUD_Innenstadt.FBX");
 
     // INIT UI
@@ -89,7 +90,7 @@ int main()
     auto viewing_mode = shader_uniform_pane.viewing_mode;
 
     auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
-    auto obj = Project::get_current()->get_model(path);
+    auto obj = project->get_model(path);
 
     auto asset_browser = AssetBrowser{};
 
@@ -106,8 +107,8 @@ int main()
     auto scene = Node::create("scene", root_transform);
     scene.children.push_back(*obj);
 
-    auto scene_instance = scene.instanciate();
-    scene_instance.compute_transforms();
+    project->scene = scene.instanciate();
+    project->scene->compute_transforms();
     auto last_frame = glfwGetTime();
 
     // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
@@ -129,7 +130,7 @@ int main()
 
         camera_controller.update(delta_time);
 
-        Project::get_current()->rebuild_fs_cache_timed(current_frame);
+        project->rebuild_fs_cache_timed(current_frame);
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -141,7 +142,7 @@ int main()
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
-        camera_controller.camera->draw(shader, shader_uniform_pane.uniforms, framebuffer, scene_instance);
+        camera_controller.camera->draw(shader, shader_uniform_pane.uniforms, framebuffer, project->scene.value());
 
         // Render GUI
         ImGui_ImplOpenGL3_NewFrame();
@@ -149,7 +150,7 @@ int main()
         ImGui::NewFrame();
 
         object_details_pane.render();
-        object_selection_tree.render(scene_instance);
+        object_selection_tree.render();
         shader_uniform_pane.render();
         asset_browser.render();
 
