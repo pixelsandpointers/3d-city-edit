@@ -54,9 +54,14 @@ std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
             #version 410 core
             out vec4 FragColor;
             in vec2 TexCoords;
+
             uniform sampler2D texture_diffuse1;
+            uniform float gamma;
+
             void main() {
-                FragColor = texture(texture_diffuse1, TexCoords);
+                vec3 color = texture(texture_diffuse1, TexCoords).rgb;
+                vec3 gammaCorrection = pow(color, vec3(1. / gamma));
+                FragColor = vec4(gammaCorrection, 1.);
             })"}},
     {
         ViewingMode::SOLID,
