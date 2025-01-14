@@ -12,15 +12,19 @@ std::optional<Texture> Texture::load_texture_from_file(char const* path)
 
     if (data) {
         GLenum format{};
+        GLenum internal_format{};
         switch (n_components) {
         case 1:
+            internal_format = GL_RED;
             format = GL_RED;
             break;
         case 3:
+            internal_format = GL_SRGB;
             format = GL_RGB;
             break;
         case 4:
-            format = GL_RGBA;
+            internal_format = GL_SRGB_ALPHA;
+            format = GL_RGB;
             break;
         default:
             stbi_image_free(data);
@@ -29,7 +33,7 @@ std::optional<Texture> Texture::load_texture_from_file(char const* path)
         }
 
         glBindTexture(GL_TEXTURE_2D, texture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
