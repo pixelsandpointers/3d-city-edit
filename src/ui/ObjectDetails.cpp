@@ -58,10 +58,6 @@ void ObjectDetails::render()
             if (i < 2)
                 ImGui::SameLine();
         }
-
-        if (ImGui::Checkbox("Shading", &toggle_shading)) {
-            // add callback
-        }
     }
 
     ImGui::End();
