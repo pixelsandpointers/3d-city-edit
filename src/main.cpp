@@ -1,3 +1,4 @@
+#include "core/AsyncTaskQueue.hpp"
 #include "core/Input.hpp"
 #include "core/Project.hpp"
 #include "renderer/Camera.hpp"
@@ -69,6 +70,7 @@ int main()
     ImGui_ImplOpenGL3_Init();
 
     Input::init(window);
+    AsyncTaskQueue::init();
 
     // assuming we set the CWD to root
     auto path = std::filesystem::current_path() / "assets";
@@ -132,6 +134,7 @@ int main()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         Input::late_update();
+        AsyncTaskQueue::main.run();
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -139,6 +142,8 @@ int main()
         /* Poll for and process events */
         glfwPollEvents();
     }
+
+    AsyncTaskQueue::shutdown();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
