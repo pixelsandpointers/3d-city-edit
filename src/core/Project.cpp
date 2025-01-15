@@ -1,5 +1,6 @@
 #include "core/Project.hpp"
 
+#include "core/AsyncTaskQueue.hpp"
 #include "core/ModelLoader.hpp"
 #include <iostream>
 
@@ -85,13 +86,30 @@ Texture* Project::get_texture(std::filesystem::path path)
         return &m_textures.at(path);
     }
 
-    auto new_texture = Texture::load_texture_from_file(path.string().c_str());
-    if (!new_texture.has_value()) {
+    m_textures.emplace(path, Texture::placeholder());
+    auto* texture = &m_textures.at(path);
+
+    if (!texture) {
         return nullptr;
     }
 
-    m_textures.emplace(path, new_texture.value());
-    return &m_textures.at(path);
+    AsyncTaskQueue::background.push_task([path, texture]() {
+        auto new_image = Image::load_from_file(path.string().c_str());
+        if (!new_image.has_value()) {
+            return;
+        }
+
+        AsyncTaskQueue::main.push_task([texture, new_image = std::move(new_image.value())]() {
+            auto new_texture = Texture::load_from_image(std::move(new_image));
+            if (!new_texture.has_value()) {
+                return;
+            }
+
+            *texture = std::move(new_texture.value());
+        });
+    });
+
+    return texture;
 }
 
 Node* Project::get_model(std::filesystem::path path)
