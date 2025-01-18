@@ -1,5 +1,6 @@
 #include "renderer/Shader.hpp"
 
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -281,6 +282,28 @@ void Shader::set_vec3(char const* name, glm::vec3 const& vector) const
 void Shader::set_vec4(char const* name, glm::vec4 const& vector) const
 {
     glUniform4fv(glGetUniformLocation(m_id, name), 1, glm::value_ptr(vector));
+}
+
+std::optional<unsigned int> Shader::get_uniform_location(char const* name) const
+{
+    // first lookup uniform location in cache, otherwise we have to query the gpu
+    auto it = m_uniform_location_cache.find(name);
+    if (it != m_uniform_location_cache.end()) {
+        return it->second;
+    }
+
+    auto loc = glGetUniformLocation(m_id, name);
+
+    if (loc == -1) {
+        std::cerr << std::format("WARNING::SHADER::UNIFORM '{}' not found in program ID {}\n", name, m_id);
+        return {};
+    }
+
+    // store value in cache
+    // NOTE: if we want to multithread, this is not thread-safe (opengl in general isn't, so it doesn't matter anyway)
+    m_uniform_location_cache[name] = loc;
+
+    return loc;
 }
 
 void Shader::check_compile_errors(unsigned int shader, ShadingStage stage) const

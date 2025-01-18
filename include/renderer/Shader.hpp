@@ -3,6 +3,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.inl>
+#include <optional>
+#include <string>
+#include <unordered_map>
 
 /**
  * @brief Encapsulates uniforms used in a shader program for rendering.
@@ -125,9 +128,11 @@ public:
     void set_vec2(char const* name, glm::vec2 const& vector) const;
     void set_vec3(char const* name, glm::vec3 const& vector) const;
     void set_vec4(char const* name, glm::vec4 const& vector) const;
+    std::optional<unsigned int> get_uniform_location(char const* name) const;
 
 private:
     void check_compile_errors(unsigned int shader, ShadingStage stage) const;
     unsigned int compile_shader(ShadingStage stage, char const* source) const;
     void link_shaders_to_program(unsigned vertex_shader, unsigned fragment_shader);
+    mutable std::unordered_map<std::string, unsigned int> m_uniform_location_cache;
 };
