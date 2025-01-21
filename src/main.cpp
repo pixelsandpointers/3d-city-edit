@@ -1,4 +1,3 @@
-#include "core/CameraController.hpp"
 #include "core/Input.hpp"
 #include "core/Project.hpp"
 #include "renderer/Camera.hpp"
@@ -7,6 +6,7 @@
 #include "ui/ObjectDetails.hpp"
 #include "ui/ObjectSelectionTree.hpp"
 #include "ui/ShaderUniformPane.hpp"
+#include "ui/Viewport.hpp"
 
 #include <filesystem>
 #include <glfw.h>
@@ -81,12 +81,11 @@ int main()
     ObjectDetails object_details_pane{};
     ObjectSelectionTree object_selection_tree{};
     ShaderUniformPane shader_uniform_pane{};
-    auto viewing_mode = shader_uniform_pane.viewing_mode;
 
-    auto camera_controller = CameraController{CameraController::Type::FREECAM, glm::vec3{0.f, 0.f, -3.f}};
     auto obj = project->get_model(path);
 
     auto asset_browser = AssetBrowser{};
+    auto viewport_window = Viewport{};
 
     if (!obj) {
         std::abort();
@@ -105,37 +104,18 @@ int main()
     project->scene->compute_transforms();
     auto last_frame = glfwGetTime();
 
-    // to adjust the shader values, introduce a map here with the uniforms being passed to the draw call,
-    // so they can be adjusted in global scope e.g. the GUI
-    Shader shader(viewing_mode);
+    glEnable(GL_DEPTH_TEST);
 
     while (!glfwWindowShouldClose(window)) {
         auto current_frame = glfwGetTime();
         auto delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
-        // Update shader if we change it in the UI
-        if (viewing_mode != shader_uniform_pane.viewing_mode) {
-            viewing_mode = shader_uniform_pane.viewing_mode;
-            shader = Shader(viewing_mode);
-        }
-
         Input::update();
-
-        camera_controller.update(delta_time);
 
         project->rebuild_fs_cache_timed(current_frame);
 
-        /* Render here */
-        glEnable(GL_DEPTH_TEST);
-
-        if (shader_uniform_pane.draw_wireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        camera_controller.camera->draw(shader, shader_uniform_pane.uniforms, framebuffer, project->scene.value());
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Render GUI
         ImGui_ImplOpenGL3_NewFrame();
@@ -146,6 +126,7 @@ int main()
         object_selection_tree.render();
         shader_uniform_pane.render();
         asset_browser.render();
+        viewport_window.render(delta_time, shader_uniform_pane);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
