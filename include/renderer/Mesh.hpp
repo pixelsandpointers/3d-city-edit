@@ -34,6 +34,7 @@ public:
 
     void draw() const;
     void draw(Shader& shader) const;
+    [[nodiscard]] bool is_fully_loaded() const;
 
 private:
     unsigned int m_vao, m_vbo, m_ebo;

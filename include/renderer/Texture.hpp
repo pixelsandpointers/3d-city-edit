@@ -20,6 +20,8 @@ struct Texture {
     int height;
     int channels;
 
+    [[nodiscard]] bool is_loaded() const { return m_id != 0; }
+
     static std::optional<Texture> load_from_image(Image);
     static Texture placeholder();
 };

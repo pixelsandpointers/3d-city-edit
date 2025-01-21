@@ -41,4 +41,5 @@ struct Node {
 
     static Node create(std::string name, Transform t);
     [[nodiscard]] InstancedNode instanciate() const;
+    [[nodiscard]] bool is_fully_loaded() const;
 };
