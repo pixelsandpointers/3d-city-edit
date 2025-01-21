@@ -48,6 +48,23 @@ InstancedNode Node::instanciate() const
     return new_node;
 }
 
+[[nodiscard]] bool Node::is_fully_loaded() const
+{
+    for (auto const& mesh : meshes) {
+        if (!mesh.is_fully_loaded()) {
+            return false;
+        }
+    }
+
+    for (auto const& child : children) {
+        if (!child.is_fully_loaded()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void InstancedNode::traverse(std::function<void(glm::mat4, Node const&)> f) const
 {
     f(model_matrix, *node);

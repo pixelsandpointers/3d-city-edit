@@ -173,6 +173,9 @@ void AssetBrowser::prepare_preview()
         m_preview_name = (*value)->name;
         render_model_preview();
         m_preview_texture = m_model_preview_framebuffer.color_texture;
+        if (!(*value)->is_fully_loaded()) {
+            m_preview_dirty = true;
+        }
         return;
     }
 
@@ -182,6 +185,9 @@ void AssetBrowser::prepare_preview()
         if (node && node->type == FSCacheNode::Type::TEXTURE) {
             auto texture = Project::get_current()->get_texture(*value);
             m_preview_texture = texture->m_id;
+            if (texture->m_id == 0) {
+                m_preview_dirty = true;
+            }
         }
     }
 }
