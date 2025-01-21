@@ -9,9 +9,32 @@
 
 struct Framebuffer {
     unsigned int id;
+    unsigned int color_texture;
+    unsigned int depth_rbo;
     int width;
     int height;
     float aspect;
+
+    static Framebuffer get_default(int width, int height);
+    static Framebuffer create_simple(int width, int height);
+
+    Framebuffer() = default;
+    Framebuffer(Framebuffer&) = delete;
+    Framebuffer(Framebuffer&&);
+    ~Framebuffer();
+    void resize(int width, int height);
+
+private:
+    // This is ugly and shouldn't be necessary...
+    // Why is the definition of an Aggregate so strange?
+    Framebuffer(unsigned int id, unsigned int color_texture, unsigned int depth_rbo, int width, int height, float aspect)
+        : id{id}
+        , color_texture{color_texture}
+        , depth_rbo{depth_rbo}
+        , width{width}
+        , height{height}
+        , aspect{aspect}
+    { }
 };
 
 class Camera {

@@ -18,31 +18,8 @@ bool imgui_treenodeex_with_color(char const* label, int flags, ImVec4 color)
 }
 
 AssetBrowser::AssetBrowser()
+    : m_model_preview_framebuffer{Framebuffer::create_simple(200, 200)}
 {
-    glGenFramebuffers(1, &m_model_preview_framebuffer.id);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_model_preview_framebuffer.id);
-
-    glGenTextures(1, &m_model_preview_texture);
-    glBindTexture(GL_TEXTURE_2D, m_model_preview_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_model_preview_framebuffer.width, m_model_preview_framebuffer.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_model_preview_texture, 0);
-
-    glGenRenderbuffers(1, &m_model_preview_depth_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_model_preview_depth_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_model_preview_framebuffer.width, m_model_preview_framebuffer.height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_model_preview_depth_rbo);
-
-    auto framebuffer_ready = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-    if (!framebuffer_ready) {
-        std::cerr << "ui/AssetBrowser: Framebuffer is not complete!\n";
-        glDeleteFramebuffers(1, &m_model_preview_framebuffer.id);
-        m_model_preview_framebuffer.id = 0;
-    }
-
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void AssetBrowser::traverse_model(Node const& node)
@@ -195,7 +172,7 @@ void AssetBrowser::prepare_preview()
     if (auto* value = std::get_if<Node const*>(&m_selected_item.value()); value != nullptr) {
         m_preview_name = (*value)->name;
         render_model_preview();
-        m_preview_texture = m_model_preview_texture;
+        m_preview_texture = m_model_preview_framebuffer.color_texture;
         return;
     }
 
@@ -236,8 +213,6 @@ void AssetBrowser::render_model_preview()
     });
 
     // Render
-    glBindFramebuffer(GL_FRAMEBUFFER, m_model_preview_framebuffer.id);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
@@ -248,8 +223,6 @@ void AssetBrowser::render_model_preview()
     m_model_preview_camera.position = aabb.max - camera_offset;
     m_model_preview_camera.target = aabb.min;
     m_model_preview_camera.draw(m_model_preview_shader, m_model_preview_uniforms, m_model_preview_framebuffer, instance);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bool AssetBrowser::is_selected_item_equal(NodeVariantType to_compare)
