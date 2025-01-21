@@ -15,11 +15,7 @@
 #include <imgui_impl_opengl3.h>
 #include <iostream>
 
-Framebuffer framebuffer{
-    .id = 0,
-    .width = 1920,
-    .height = 1080,
-    .aspect = 1920.f / 1080.f};
+auto framebuffer = Framebuffer::get_default(1920, 1080);
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -28,9 +24,7 @@ void glfw_error_callback([[maybe_unused]] int error, char const* description)
 
 void glfw_window_size_callback(GLFWwindow*, int width, int height)
 {
-    framebuffer.width = width;
-    framebuffer.height = height;
-    framebuffer.aspect = width / static_cast<float>(height);
+    framebuffer.resize(width, height);
 }
 
 int main()
@@ -133,7 +127,6 @@ int main()
         project->rebuild_fs_cache_timed(current_frame);
 
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
         if (shader_uniform_pane.draw_wireframe) {
