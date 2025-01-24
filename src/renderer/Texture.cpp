@@ -30,16 +30,12 @@ std::optional<Image> Image::load_from_file(char const* path)
         .width = width,
         .height = height,
         .channels = n_components,
-        .data = data,
+        .data = std::vector<unsigned char>(data, data + n_components * width * height),
     };
 }
 
 std::optional<Texture> Texture::load_from_image(Image image)
 {
-    if (image.data == 0) {
-        return {};
-    }
-
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
 
@@ -59,13 +55,12 @@ std::optional<Texture> Texture::load_from_image(Image image)
         format = GL_RGB;
         break;
     default:
-        stbi_image_free(image.data);
         glDeleteTextures(1, &texture_id);
         return {};
     }
 
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data.data());
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -73,22 +68,57 @@ std::optional<Texture> Texture::load_from_image(Image image)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    stbi_image_free(image.data);
-
     return Texture{
-        .m_id = texture_id,
-        .width = image.width,
-        .height = image.height,
-        .channels = image.channels,
+        texture_id,
+        image.width,
+        image.height,
+        image.channels,
     };
 }
 
 Texture Texture::placeholder()
 {
     return Texture{
-        .m_id = 0,
-        .width = 0,
-        .height = 0,
-        .channels = 0,
+        0,
+        0,
+        0,
+        0,
     };
 }
+
+Texture::Texture(Texture&& other)
+    : m_id{other.m_id}
+    , width{other.width}
+    , height{other.height}
+    , channels{other.channels}
+{
+    // Important: Destructor will be called after move!
+    other.m_id = 0;
+}
+
+Texture& Texture::operator=(Texture&& other)
+{
+    if (this != &other) {
+        m_id = other.m_id;
+        width = other.width;
+        height = other.height;
+        channels = other.channels;
+
+        // Important: Destructor will be called after move!
+        other.m_id = 0;
+    }
+
+    return *this;
+}
+
+Texture::~Texture()
+{
+    glDeleteTextures(1, &m_id);
+}
+
+Texture::Texture(unsigned int m_id, int width, int height, int channels)
+    : m_id{m_id}
+    , width{width}
+    , height{height}
+    , channels{channels}
+{ }

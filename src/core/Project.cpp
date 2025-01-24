@@ -99,7 +99,7 @@ Texture* Project::get_texture(std::filesystem::path path)
             return;
         }
 
-        AsyncTaskQueue::main.push_task([texture, new_image = std::move(new_image.value())]() {
+        AsyncTaskQueue::main.push_task([texture, path, new_image = std::move(new_image.value())]() mutable {
             auto new_texture = Texture::load_from_image(std::move(new_image));
             if (!new_texture.has_value()) {
                 return;
