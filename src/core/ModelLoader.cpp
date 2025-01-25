@@ -160,7 +160,7 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
     return Mesh{vertices, indices, textures, aabb};
 }
 
-Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory)
+Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory, NodeLocation parent_location)
 {
     aiVector3D scale;
     aiQuaternion rotation;
@@ -173,14 +173,17 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
         .scale = ai_to_glm_vec(scale),
     };
 
-    auto new_node = Node::create(node->mName.C_Str(), new_transform);
+    auto name = node->mName.C_Str();
+
+    auto location = NodeLocation::file(parent_location.file_path, parent_location.node_path / name);
+    auto new_node = Node::create(name, new_transform, location);
 
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         new_node.meshes.push_back(process_mesh(mesh, scene, directory));
     }
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        new_node.children.push_back(process_node(node->mChildren[i], scene, directory));
+        new_node.children.push_back(process_node(node->mChildren[i], scene, directory, location));
     }
 
     return new_node;
@@ -197,6 +200,8 @@ std::optional<Node> ModelLoader::load_model(std::filesystem::path path)
 
     auto directory = path.parent_path();
 
+    auto root_node_location = NodeLocation::file(path, "/");
+
     // node processing seems off
-    return process_node(scene->mRootNode, scene, directory);
+    return process_node(scene->mRootNode, scene, directory, root_node_location);
 }

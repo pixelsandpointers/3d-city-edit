@@ -2,6 +2,8 @@
 
 #include "core/AsyncTaskQueue.hpp"
 #include "core/ModelLoader.hpp"
+#include "core/Serializer.hpp"
+#include <fstream>
 #include <iostream>
 
 bool path_starts_with(std::filesystem::path path, std::filesystem::path prefix)
@@ -53,6 +55,17 @@ void Project::load(std::filesystem::path path)
 {
     // Ugly workaround for `std::make_unique` not being able to access private constructors
     current = std::unique_ptr<Project>(new Project(path));
+
+    try {
+        auto scene_file = path / "scene.json";
+        if (std::filesystem::exists(scene_file)) {
+            auto serializer = Serializer{*current};
+            auto stream = std::ifstream{scene_file};
+            current->scene = serializer.deserialize_scene(stream);
+        }
+    } catch (std::exception const& e) {
+        std::cerr << e.what() << "\n";
+    }
 }
 
 Project::Project(std::filesystem::path root)
@@ -146,6 +159,32 @@ Node* Project::get_cached_model(std::filesystem::path path)
     }
 
     return nullptr;
+}
+
+Node* get_node_helper(Node& parent, std::filesystem::path node_path)
+{
+    if (parent.location.node_path == node_path) {
+        return &parent;
+    }
+
+    for (auto& child : parent.children) {
+        if (path_starts_with(node_path, child.location.node_path)) {
+            return get_node_helper(child, node_path);
+        }
+    }
+
+    return nullptr;
+}
+
+Node* Project::get_node(NodeLocation location)
+{
+    auto model = get_model(location.file_path);
+
+    if (!model) {
+        return nullptr;
+    }
+
+    return get_node_helper(*model, location.node_path);
 }
 
 bool case_insensitive_equals(std::string_view a_insensitive, std::string_view b_lower)
@@ -293,4 +332,15 @@ void Project::rebuild_fs_cache_timed(double current_time)
 Texture const* Project::fallback_texture() const
 {
     return &m_fallback_texture;
+}
+
+void Project::store()
+{
+    if (scene.has_value()) {
+        auto scene_file = std::ofstream{root / "scene.json"};
+        auto serializer = Serializer{*this};
+        serializer.serialize(scene.value(), scene_file);
+    }
+
+    // TODO: Serialize config
 }

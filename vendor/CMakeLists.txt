@@ -76,3 +76,14 @@ else ()
     target_include_directories(3d INTERFACE libs/assimp-src/include)
     target_link_libraries(3d assimp::assimp)
 endif ()
+
+find_package(nlohmann_json CONFIG)
+if (NOT nlohmann_json_FOUND)
+    FetchContent_Declare(json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    FetchContent_MakeAvailable(json)
+endif ()
+target_link_libraries(3d nlohmann_json::nlohmann_json)

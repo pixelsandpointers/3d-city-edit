@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer/Mesh.hpp"
+#include <filesystem>
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -24,7 +25,10 @@ struct Transform {
 // To be able to change the transform of each instances separately, InstancedNode needs its own transform component.
 struct InstancedNode {
     Transform transform;
+
+    // Can be nullptr!
     Node const* node;
+
     glm::mat4 model_matrix{0.0f};
     std::vector<InstancedNode> children;
     std::string name;
@@ -33,13 +37,23 @@ struct InstancedNode {
     void compute_transforms(glm::mat4 = glm::mat4{1.0f});
 };
 
+struct NodeLocation {
+    bool has_file;
+    std::filesystem::path file_path;
+    std::filesystem::path node_path;
+
+    static NodeLocation empty();
+    static NodeLocation file(std::filesystem::path file_path, std::filesystem::path node_path);
+};
+
 struct Node {
     Transform transform;
     std::vector<Node> children;
     std::vector<Mesh> meshes;
     std::string name;
+    NodeLocation location;
 
-    static Node create(std::string name, Transform t);
+    static Node create(std::string name, Transform transform, NodeLocation location);
     [[nodiscard]] InstancedNode instanciate() const;
     [[nodiscard]] bool is_fully_loaded() const;
 };

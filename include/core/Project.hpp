@@ -33,12 +33,14 @@ public:
 
     static Project* get_current();
     static void load(std::filesystem::path);
+    void store();
 
     FSCacheNode* get_fs_cache();
     FSCacheNode* get_fs_cache(std::filesystem::path);
     Texture const* get_texture(std::filesystem::path);
     Node* get_model(std::filesystem::path);
     Node* get_cached_model(std::filesystem::path);
+    Node* get_node(NodeLocation);
     void rebuild_fs_cache_timed(double current_time);
     Texture const* fallback_texture() const;
 
