@@ -73,36 +73,50 @@ int main()
     AsyncTaskQueue::init();
 
     // assuming we set the CWD to root
+    // TODO: Replace with some kind of "Open Project" dialog
     auto path = std::filesystem::current_path() / "assets";
     std::cout << path.string().c_str() << std::endl;
     Project::load(path);
+
     auto project = Project::get_current();
-    path.append("Models/TUD_Innenstadt.FBX");
 
-    // INIT UI
-    ObjectDetails object_details_pane{};
-    ObjectSelectionTree object_selection_tree{};
-    ShaderUniformPane shader_uniform_pane{};
+    // Instanciate the object if it didn't get loaded
+    // TODO: Remove when objects can be added at runtime
 
-    auto obj = project->get_model(path);
-
-    auto asset_browser = AssetBrowser{};
-    auto viewport_window = Viewport{};
-
-    if (!obj) {
-        std::abort();
-    }
-
+    // This is just some temporary workaround
     auto root_transform = Transform{
         .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
         .orientation = glm::vec3{0.0f},
         .scale = glm::vec3{1.0f},
     };
 
-    auto scene = Node::create("scene", root_transform);
-    scene.children.push_back(*obj);
+    auto scene = Node::create("scene", root_transform, NodeLocation::empty());
 
-    project->scene = scene.instanciate();
+    if (!project->scene.has_value()) {
+        auto model_path = path / "Models/TUD_Innenstadt.FBX";
+        auto obj = project->get_model(model_path);
+
+        if (!obj) {
+            std::abort();
+        }
+
+        scene.children.push_back(*obj);
+
+        project->scene = scene.instanciate();
+    }
+
+    if (!project->scene.has_value()) {
+        std::abort();
+    }
+
+    // INIT UI
+    ObjectDetails object_details_pane{};
+    ObjectSelectionTree object_selection_tree{};
+    ShaderUniformPane shader_uniform_pane{};
+
+    auto asset_browser = AssetBrowser{};
+    auto viewport_window = Viewport{};
+
     project->scene->compute_transforms();
     auto last_frame = glfwGetTime();
 
@@ -144,6 +158,7 @@ int main()
     }
 
     AsyncTaskQueue::shutdown();
+    project->store();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

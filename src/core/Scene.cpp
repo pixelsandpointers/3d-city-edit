@@ -21,13 +21,14 @@ void Transform::set_orientation_euler(glm::vec3 euler)
     orientation = glm::quat{euler};
 }
 
-Node Node::create(std::string name, Transform t)
+Node Node::create(std::string name, Transform transform, NodeLocation location)
 {
     return Node{
-        .transform = t,
+        .transform = transform,
         .children = {},
         .meshes = {},
         .name = name,
+        .location = location,
     };
 }
 
@@ -67,7 +68,10 @@ InstancedNode Node::instanciate() const
 
 void InstancedNode::traverse(std::function<void(glm::mat4, Node const&)> f) const
 {
-    f(model_matrix, *node);
+    if (node) {
+        f(model_matrix, *node);
+    }
+
     for (auto const& child : children) {
         child.traverse(f);
     }
@@ -79,4 +83,22 @@ void InstancedNode::compute_transforms(glm::mat4 parent_transform)
     for (auto& child : children) {
         child.compute_transforms(model_matrix);
     }
+}
+
+NodeLocation NodeLocation::empty()
+{
+    return NodeLocation{
+        .has_file = false,
+        .file_path = "",
+        .node_path = "",
+    };
+}
+
+NodeLocation NodeLocation::file(std::filesystem::path file_path, std::filesystem::path node_path)
+{
+    return NodeLocation{
+        .has_file = true,
+        .file_path = file_path,
+        .node_path = node_path,
+    };
 }

@@ -25,6 +25,7 @@
             glfw
             (imgui.override { IMGUI_BUILD_GLFW_BINDING = true; })
             zlib
+            nlohmann_json
           ];
         };
       });
