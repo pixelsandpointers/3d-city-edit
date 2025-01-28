@@ -38,6 +38,12 @@ void AssetBrowser::traverse_model(Node const& node)
             ImGui::TreeNodeEx(child.name.c_str(), flags | imgui_treenode_leaf_flags);
         }
 
+        if (ImGui::BeginDragDropSource()) {
+            auto child_ptr = &child;
+            ImGui::SetDragDropPayload("node", &child_ptr, sizeof(Node*));
+            ImGui::EndDragDropSource();
+        }
+
         if (ImGui::IsItemClicked()) {
             m_selected_item = &child;
             m_preview_dirty = true;
@@ -71,6 +77,14 @@ void AssetBrowser::traverse_directory(FSCacheNode const& node)
             auto model = Project::get_current()->get_cached_model(entry.path);
             int flags = is_selected_item_equal(model) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
             bool open = ImGui::TreeNodeEx(entry.path.filename().string().c_str(), flags);
+
+            if (ImGui::BeginDragDropSource()) {
+                if (!model) {
+                    model = Project::get_current()->get_model(entry.path);
+                }
+                ImGui::SetDragDropPayload("node", &model, sizeof(Node*));
+                ImGui::EndDragDropSource();
+            }
 
             if (ImGui::IsItemClicked()) {
                 if (!model) {
