@@ -54,6 +54,6 @@ struct Node {
     NodeLocation location;
 
     static Node create(std::string name, Transform transform, NodeLocation location);
-    [[nodiscard]] InstancedNode instanciate() const;
+    [[nodiscard]] InstancedNode instantiate() const;
     [[nodiscard]] bool is_fully_loaded() const;
 };

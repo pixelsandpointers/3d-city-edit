@@ -28,7 +28,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
         if (ImGui::BeginDragDropTarget()) {
             if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                 auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
-                child.children.push_back(node_to_instantiate->instanciate());
+                child.children.push_back(node_to_instantiate->instantiate());
                 project->scene->compute_transforms();
             }
             ImGui::EndDragDropTarget();

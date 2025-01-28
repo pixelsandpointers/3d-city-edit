@@ -32,7 +32,7 @@ Node Node::create(std::string name, Transform transform, NodeLocation location)
     };
 }
 
-InstancedNode Node::instanciate() const
+InstancedNode Node::instantiate() const
 {
     InstancedNode new_node{
         .transform = transform,
@@ -43,7 +43,7 @@ InstancedNode Node::instanciate() const
     };
 
     for (auto const& child : children) {
-        new_node.children.push_back(child.instanciate());
+        new_node.children.push_back(child.instantiate());
     }
 
     return new_node;

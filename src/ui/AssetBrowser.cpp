@@ -220,7 +220,7 @@ void AssetBrowser::render_model_preview()
         .max = glm::vec3{-std::numeric_limits<float>::max()},
     };
 
-    auto instance = selected_node->instanciate();
+    auto instance = selected_node->instantiate();
     instance.compute_transforms();
 
     instance.traverse([&](glm::mat4 transform_matrix, Node const& node) {

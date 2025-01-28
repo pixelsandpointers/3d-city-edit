@@ -135,7 +135,7 @@ int main()
 
         scene.children.push_back(*obj);
 
-        project->scene = scene.instanciate();
+        project->scene = scene.instantiate();
     }
 
     if (!project->scene.has_value()) {
