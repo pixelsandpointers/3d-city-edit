@@ -25,6 +25,15 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             ImGui::TreeNodeEx(child.name.c_str(), imgui_treenode_leaf_flags | flags_selected);
         }
 
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto payload = ImGui::AcceptDragDropPayload("node")) {
+                auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
+                child.children.push_back(node_to_instantiate->instanciate());
+                project->scene->compute_transforms();
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         if (ImGui::IsItemClicked()) {
             project->selected_node = &child;
         }
