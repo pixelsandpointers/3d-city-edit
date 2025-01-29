@@ -27,7 +27,8 @@ nlohmann::json Serializer::serialize(InstancedNode const& source) const
     auto has_file = source.node && source.node->location.has_file;
     target["has_file"] = has_file;
     if (has_file) {
-        target["file_path"] = source.node->location.file_path;
+        auto project_root = Project::get_current()->root;
+        target["file_path"] = std::filesystem::relative(source.node->location.file_path, project_root);
         target["node_path"] = source.node->location.node_path;
     }
 
@@ -64,7 +65,8 @@ InstancedNode Serializer::deserialize(nlohmann::json& source) const
     auto location = NodeLocation::empty();
     location.has_file = source["has_file"];
     if (location.has_file) {
-        location.file_path = static_cast<std::string>(source["file_path"]);
+        auto project_root = Project::get_current()->root;
+        location.file_path = project_root / static_cast<std::filesystem::path>(static_cast<std::string>(source["file_path"])); // This doesn't look particularly nice
         location.node_path = static_cast<std::string>(source["node_path"]);
     }
 
