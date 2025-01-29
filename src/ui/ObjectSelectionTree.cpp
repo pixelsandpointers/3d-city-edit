@@ -10,12 +10,22 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
 {
     auto* project = Project::get_current();
 
-    for (auto& child : root.children) {
+    for (auto child_it = root.children.begin(); child_it != root.children.end(); ++child_it) {
+        auto& child = *child_it;
+
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         bool open = false;
 
-        auto flags_selected = &child == project->selected_node
+        auto is_selected = &child == project->selected_node;
+
+        if (ImGui::IsWindowFocused() && is_selected && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            child_it = root.children.erase(child_it) - 1;
+            project->selected_node = nullptr;
+            continue;
+        }
+
+        auto flags_selected = is_selected
             ? ImGuiTreeNodeFlags_Selected
             : ImGuiTreeNodeFlags_None;
 
