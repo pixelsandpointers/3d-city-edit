@@ -57,7 +57,7 @@ void Mesh::setup_mesh()
 bool Mesh::is_fully_loaded() const
 {
     for (auto const& texture : m_textures) {
-        if (!texture.second->is_loaded()) {
+        if (!texture.second->is_loaded) {
             return false;
         }
     }
