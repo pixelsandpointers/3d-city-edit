@@ -135,6 +135,9 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
 
     // diffuse
     auto diffuse = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse", directory);
+    if (diffuse.size() == 0) {
+        diffuse.push_back(std::make_pair(std::string{"texture_diffuse1"}, Project::get_current()->fallback_texture()));
+    }
     textures.insert(textures.end(), diffuse.begin(), diffuse.end());
 
     // specular

@@ -260,3 +260,8 @@ void Project::rebuild_fs_cache_timed(double current_time)
     m_fs_cache_last_updated = current_time;
     rebuild_fs_cache();
 }
+
+Texture const* Project::fallback_texture() const
+{
+    return &m_fallback_texture;
+}
