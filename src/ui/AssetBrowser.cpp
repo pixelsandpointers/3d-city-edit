@@ -185,7 +185,7 @@ void AssetBrowser::prepare_preview()
         if (node && node->type == FSCacheNode::Type::TEXTURE) {
             auto texture = Project::get_current()->get_texture(*value);
             m_preview_texture = texture->m_id;
-            if (texture->m_id == 0) {
+            if (!texture->is_loaded) {
                 m_preview_dirty = true;
             }
         }

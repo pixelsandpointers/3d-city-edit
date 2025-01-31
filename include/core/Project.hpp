@@ -5,6 +5,10 @@
 #include <filesystem>
 #include <unordered_map>
 
+// Needed when using glm::vec4 as key in std::unordered_map
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/hash.hpp"
+
 struct FSCacheNode {
     enum class Type {
         DIRECTORY,
@@ -41,6 +45,7 @@ public:
 private:
     static std::unique_ptr<Project> current;
 
+    Texture m_fallback_texture;
     std::unordered_map<std::filesystem::path, Texture> m_textures;
     std::unordered_map<std::filesystem::path, Node> m_models;
     std::unique_ptr<FSCacheNode> m_fs_cache;

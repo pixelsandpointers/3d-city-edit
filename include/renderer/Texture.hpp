@@ -2,6 +2,7 @@
 
 #include <assimp/scene.h>
 #include <glad/glad.h>
+#include <glm/fwd.hpp>
 #include <optional>
 #include <stb_image.h>
 #include <vector>
@@ -20,11 +21,11 @@ struct Texture {
     int width;
     int height;
     int channels;
-
-    [[nodiscard]] bool is_loaded() const { return m_id != 0; }
+    bool is_loaded{false};
 
     static std::optional<Texture> load_from_image(Image);
-    static Texture placeholder();
+    static Texture fallback_placeholder(unsigned int id);
+    static Texture single_color(glm::vec4 color);
 
     Texture(Texture const&) = delete;
     Texture() = default;
@@ -34,5 +35,5 @@ struct Texture {
     ~Texture();
 
 private:
-    Texture(unsigned int m_id, int width, int height, int channels);
+    Texture(unsigned int m_id, int width, int height, int channels, bool is_loaded);
 };

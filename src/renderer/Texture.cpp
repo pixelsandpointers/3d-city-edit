@@ -1,5 +1,6 @@
 #include "renderer/Texture.hpp"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
 std::optional<Image> Image::load_from_file(char const* path)
@@ -73,17 +74,29 @@ std::optional<Texture> Texture::load_from_image(Image image)
         image.width,
         image.height,
         image.channels,
+        true,
     };
 }
 
-Texture Texture::placeholder()
+Texture Texture::fallback_placeholder(unsigned int id)
 {
-    return Texture{
-        0,
-        0,
-        0,
-        0,
-    };
+    return Texture{id, 0, 0, 0, false};
+}
+
+Texture Texture::single_color(glm::vec4 color)
+{
+    unsigned int id;
+    glGenTextures(1, &id);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(color));
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    return Texture{id, 1, 1, 4, true};
 }
 
 Texture::Texture(Texture&& other)
@@ -113,12 +126,15 @@ Texture& Texture::operator=(Texture&& other)
 
 Texture::~Texture()
 {
-    glDeleteTextures(1, &m_id);
+    if (is_loaded && m_id != 0) {
+        glDeleteTextures(1, &m_id);
+    }
 }
 
-Texture::Texture(unsigned int m_id, int width, int height, int channels)
+Texture::Texture(unsigned int m_id, int width, int height, int channels, bool is_loaded)
     : m_id{m_id}
     , width{width}
     , height{height}
     , channels{channels}
+    , is_loaded{is_loaded}
 { }

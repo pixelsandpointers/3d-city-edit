@@ -59,6 +59,8 @@ Project::Project(std::filesystem::path root)
     : root{root}
 {
     rebuild_fs_cache();
+    // TODO: Allow setting and changing this color in the settings
+    m_fallback_texture = Texture::single_color(glm::vec4{1.0f});
 }
 
 FSCacheNode* Project::get_fs_cache()
@@ -86,7 +88,7 @@ Texture* Project::get_texture(std::filesystem::path path)
         return &m_textures.at(path);
     }
 
-    m_textures.emplace(path, Texture::placeholder());
+    m_textures.emplace(path, Texture::fallback_placeholder(m_fallback_texture.m_id));
     auto* texture = &m_textures.at(path);
 
     if (!texture) {
