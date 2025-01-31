@@ -77,7 +77,7 @@ FSCacheNode* Project::get_fs_cache(std::filesystem::path path)
     return m_fs_cache->get_child(path);
 }
 
-Texture* Project::get_texture(std::filesystem::path path)
+Texture const* Project::get_texture(std::filesystem::path path)
 {
     if (!path.is_absolute()) {
         std::cerr << "path " << path << " is not absolute";

@@ -33,7 +33,7 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
 
         // 2. Attempt: maybe the file is in a subdirectory.
         auto search_in_subdirectory = [&](std::string filename) -> std::optional<std::filesystem::path> {
-            for (auto const &entry: std::filesystem::directory_iterator{directory}) {
+            for (auto const& entry : std::filesystem::directory_iterator{directory}) {
                 if (std::filesystem::exists(entry.path() / filename)) {
                     return entry.path() / filename;
                 }
@@ -54,16 +54,16 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
                 return optional_path.value();
             }
         }
-    } catch (const std::exception e) {
+    } catch (std::exception const e) {
         std::cerr << "Failed to guess texture path: " << e.what() << "\n";
     }
     // Fail
     return {};
 }
 
-std::vector<std::pair<std::string, Texture*>> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name, std::filesystem::path directory)
+std::vector<std::pair<std::string, Texture const*>> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name, std::filesystem::path directory)
 {
-    std::vector<std::pair<std::string, Texture*>> textures;
+    std::vector<std::pair<std::string, Texture const*>> textures;
     for (unsigned int i = 0; i < mat->GetTextureCount(type); ++i) {
         aiString string;
         mat->GetTexture(type, i, &string);
@@ -90,7 +90,7 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<std::pair<std::string, Texture*>> textures;
+    std::vector<std::pair<std::string, Texture const*>> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
         Vertex vertex;

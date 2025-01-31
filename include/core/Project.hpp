@@ -36,7 +36,7 @@ public:
 
     FSCacheNode* get_fs_cache();
     FSCacheNode* get_fs_cache(std::filesystem::path);
-    Texture* get_texture(std::filesystem::path);
+    Texture const* get_texture(std::filesystem::path);
     Node* get_model(std::filesystem::path);
     Node* get_cached_model(std::filesystem::path);
     void rebuild_fs_cache();
