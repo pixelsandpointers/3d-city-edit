@@ -1,6 +1,6 @@
 #include "renderer/Mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture*>> textures, AABB aabb)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture const*>> textures, AABB aabb)
     : m_vertices(vertices)
     , m_indices(indices)
     , m_textures(textures)

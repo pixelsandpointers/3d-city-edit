@@ -24,12 +24,12 @@ class Mesh {
 public:
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
-    std::vector<std::pair<std::string, Texture*>> m_textures;
+    std::vector<std::pair<std::string, Texture const*>> m_textures;
     AABB aabb;
 
     Mesh(std::vector<Vertex> vertices,
         std::vector<unsigned int> indices,
-        std::vector<std::pair<std::string, Texture*>> textures,
+        std::vector<std::pair<std::string, Texture const*>> textures,
         AABB);
 
     void draw() const;
