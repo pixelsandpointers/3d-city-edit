@@ -41,6 +41,7 @@ public:
     Node* get_cached_model(std::filesystem::path);
     void rebuild_fs_cache();
     void rebuild_fs_cache_timed(double current_time);
+    Texture const* fallback_texture() const;
 
 private:
     static std::unique_ptr<Project> current;
