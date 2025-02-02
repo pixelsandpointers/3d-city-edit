@@ -195,6 +195,25 @@ FSCacheNode::Type identify_file(std::filesystem::path path)
     return FSCacheNode::Type::OTHER;
 }
 
+bool is_fs_cache_valid(FSCacheNode const& cache_node)
+{
+    if (!std::filesystem::is_directory(cache_node.path)) {
+        return true;
+    }
+
+    auto const mtime = std::filesystem::last_write_time(cache_node.path);
+    if (cache_node.mtime != mtime) {
+        return false;
+    }
+
+    for (auto const& child : cache_node.children) {
+        if (!is_fs_cache_valid(child)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void rebuild_fs_cache_helper(FSCacheNode& cache_node)
 {
     if (!std::filesystem::is_directory(cache_node.path)) {
@@ -215,7 +234,7 @@ void rebuild_fs_cache_helper(FSCacheNode& cache_node)
     for (auto& entry : std::filesystem::directory_iterator{cache_node.path}) {
         auto const file_type = identify_file(entry.path());
 
-        auto new_node = cache_node.children.emplace_back(FSCacheNode{
+        auto& new_node = cache_node.children.emplace_back(FSCacheNode{
             .path = entry.path(),
             .mtime = file_type == FSCacheNode::Type::DIRECTORY
                 ? std::filesystem::file_time_type{}
@@ -257,8 +276,18 @@ void Project::rebuild_fs_cache_timed(double current_time)
         return;
     }
 
-    m_fs_cache_last_updated = current_time;
-    rebuild_fs_cache();
+    AsyncTaskQueue::background.push_task([this, current_time] {
+        m_fs_cache_last_updated = current_time;
+
+        if (is_fs_cache_valid(*m_fs_cache)) {
+            return;
+        }
+
+        AsyncTaskQueue::main.push_task([this] {
+            std::cout << "fs cache update in foreground\n";
+            rebuild_fs_cache();
+        });
+    });
 }
 
 Texture const* Project::fallback_texture() const
