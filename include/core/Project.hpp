@@ -39,7 +39,6 @@ public:
     Texture const* get_texture(std::filesystem::path);
     Node* get_model(std::filesystem::path);
     Node* get_cached_model(std::filesystem::path);
-    void rebuild_fs_cache();
     void rebuild_fs_cache_timed(double current_time);
     Texture const* fallback_texture() const;
 
@@ -53,4 +52,5 @@ private:
     double m_fs_cache_last_updated{0};
 
     Project(std::filesystem::path);
+    void rebuild_fs_cache();
 };
