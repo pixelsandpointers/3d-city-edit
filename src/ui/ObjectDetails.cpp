@@ -16,10 +16,6 @@ void ObjectDetails::render()
     ImVec2 min_size(300, 150); // Base minimum size
     ImVec2 max_size(FLT_MAX, FLT_MAX); // No maximum size limit
 
-    // Set the child window position to the right side of the parent window
-    ImVec2 child_pos = ImVec2(0, 0);
-    ImGui::SetNextWindowPos(child_pos);
-
     auto transform_changed = false;
     auto project = Project::get_current();
     auto node = project->selected_node;
