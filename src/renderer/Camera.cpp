@@ -90,12 +90,13 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float fov)
 }
 
 // add viewing type => lid, wireframe, etc
-void Camera::draw(Shader& shader,
+void Camera::draw(ViewingMode mode,
     Uniforms const& uniforms,
     Framebuffer const& framebuffer,
     InstancedNode const& node)
 {
-    // depending on the viewing mode allow wireframe, flat or lid shading
+    auto const& shader = Shader::get_shader_for_mode(mode);
+
     shader.use();
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
@@ -120,7 +121,7 @@ void Camera::draw(Shader& shader,
     node.traverse([&](auto transform_matrix, auto const& node_data) {
         for (auto const& mesh : node_data.meshes) {
             shader.set_mat4("model", transform_matrix);
-            mesh.draw(shader);
+            mesh.draw(mode);
         }
     });
 

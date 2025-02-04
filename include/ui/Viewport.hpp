@@ -13,7 +13,5 @@ struct Viewport {
 
 private:
     Framebuffer m_framebuffer;
-    Shader m_shader;
-    ViewingMode m_last_viewing_mode;
     CameraController m_camera_controller;
 };

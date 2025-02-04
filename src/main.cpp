@@ -58,6 +58,8 @@ int main()
         return -1;
     }
 
+    Shader::init();
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
