@@ -61,36 +61,32 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
     return {};
 }
 
-std::vector<std::pair<std::string, Texture const*>> load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name, std::filesystem::path directory)
+Texture const* load_material_texture(aiMaterial* mat, aiTextureType type, std::filesystem::path directory)
 {
-    std::vector<std::pair<std::string, Texture const*>> textures;
-    for (unsigned int i = 0; i < mat->GetTextureCount(type); ++i) {
-        aiString string;
-        mat->GetTexture(type, i, &string);
-        auto filename = std::string{string.C_Str()};
-
-        auto texture_path = guess_texture_path(directory, filename);
-        if (!texture_path.has_value()) {
-            std::cout << "Failed to guess path for bogus texture name '" << filename << "'\n";
-            continue;
-        }
-
-        assert(Project::get_current() != nullptr);
-        auto texture = Project::get_current()->get_texture(texture_path.value());
-        if (!texture) {
-            continue;
-        }
-
-        textures.push_back(std::make_pair(type_name + std::to_string(i), texture));
+    if (mat->GetTextureCount(type) == 0) {
+        return nullptr;
     }
-    return textures;
+
+    aiString string;
+    mat->GetTexture(type, 0, &string);
+    auto filename = std::string{string.C_Str()};
+
+    auto texture_path = guess_texture_path(directory, filename);
+    if (!texture_path.has_value()) {
+        std::cout << "Failed to guess path for bogus texture name '" << filename << "'\n";
+        return nullptr;
+    }
+
+    assert(Project::get_current() != nullptr);
+    auto texture = Project::get_current()->get_texture(texture_path.value());
+
+    return texture;
 }
 
 Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path directory)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<std::pair<std::string, Texture const*>> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
         Vertex vertex;
@@ -134,30 +130,17 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
     auto material = scene->mMaterials[mesh->mMaterialIndex];
 
     // diffuse
-    auto diffuse = load_material_textures(material, aiTextureType_DIFFUSE, "texture_diffuse", directory);
-    if (diffuse.size() == 0) {
-        diffuse.push_back(std::make_pair(std::string{"texture_diffuse1"}, Project::get_current()->fallback_texture()));
+    auto diffuse = load_material_texture(material, aiTextureType_DIFFUSE, directory);
+    if (!diffuse) {
+        diffuse = Project::get_current()->fallback_texture();
     }
-    textures.insert(textures.end(), diffuse.begin(), diffuse.end());
-
-    // specular
-    auto specular = load_material_textures(material, aiTextureType_SPECULAR, "texture_specular", directory);
-    textures.insert(textures.end(), specular.begin(), specular.end());
-
-    // normals
-    auto normal = load_material_textures(material, aiTextureType_NORMALS, "texture_normal", directory);
-    textures.insert(textures.end(), normal.begin(), normal.end());
-
-    // height map
-    auto height = load_material_textures(material, aiTextureType_AMBIENT, "texture_height", directory);
-    textures.insert(textures.end(), height.begin(), height.end());
 
     auto aabb = AABB{
         .min = ai_to_glm_vec(mesh->mAABB.mMin),
         .max = ai_to_glm_vec(mesh->mAABB.mMax),
     };
 
-    return Mesh{vertices, indices, textures, aabb};
+    return Mesh{vertices, indices, diffuse, aabb};
 }
 
 Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory, NodeLocation parent_location)
