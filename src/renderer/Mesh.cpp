@@ -1,9 +1,9 @@
 #include "renderer/Mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::pair<std::string, Texture const*>> textures, AABB aabb)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Texture const* texture_diffuse, AABB aabb)
     : m_vertices(vertices)
     , m_indices(indices)
-    , m_textures(textures)
+    , m_texture_diffuse(texture_diffuse)
     , aabb(aabb)
 {
     setup_mesh();
@@ -18,11 +18,11 @@ void Mesh::draw() const
 
 void Mesh::draw(Shader& shader) const
 {
-    for (unsigned int i = 0; i < m_textures.size(); i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glUniform1i(glGetUniformLocation(shader.m_id, m_textures[i].first.c_str()), i);
-        glBindTexture(GL_TEXTURE_2D, m_textures[i].second->m_id);
-    }
+    // set diffuse texture
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(shader.m_id, "texture_diffuse"), 0);
+    glBindTexture(GL_TEXTURE_2D, m_texture_diffuse->m_id);
+
     // set active
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(m_indices.size()), GL_UNSIGNED_INT, nullptr);
@@ -56,13 +56,7 @@ void Mesh::setup_mesh()
 
 bool Mesh::is_fully_loaded() const
 {
-    for (auto const& texture : m_textures) {
-        if (!texture.second->is_loaded) {
-            return false;
-        }
-    }
-
-    return true;
+    return m_texture_diffuse->is_loaded;
 }
 
 AABB AABB::merge(AABB const& other)
