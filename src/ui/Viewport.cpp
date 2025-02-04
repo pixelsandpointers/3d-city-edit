@@ -5,7 +5,7 @@
 
 Viewport::Viewport()
     : m_framebuffer{Framebuffer::create_simple(1, 1)}
-    , m_camera_controller{CameraController::Type::FREECAM, glm::vec3{}}
+    , m_camera_controller{CameraController::Type::UNITY, glm::vec3{}}
 {
 }
 
