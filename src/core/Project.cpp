@@ -334,6 +334,11 @@ Texture const* Project::fallback_texture() const
     return &m_fallback_texture;
 }
 
+Texture const* Project::white_texture() const
+{
+    return &m_white_texture;
+}
+
 void Project::store()
 {
     if (scene.has_value()) {

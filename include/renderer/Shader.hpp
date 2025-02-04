@@ -114,6 +114,7 @@ public:
 
     static Shader lighting;
     static Shader albedo;
+    static Shader post_process_outline;
     static Shader const& get_shader_for_mode(ViewingMode);
     static void init();
 

@@ -56,4 +56,10 @@ public:
         Uniforms const&,
         Framebuffer const&,
         InstancedNode const&);
+
+private:
+    Framebuffer m_mask_framebuffer{Framebuffer::create_simple(1, 1)};
+    unsigned int m_quad_vao{0}, m_quad_vbo{0};
+
+    void draw_quad();
 };
