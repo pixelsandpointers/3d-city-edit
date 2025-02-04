@@ -111,9 +111,19 @@ public:
         FRAGMENT,
         PROGRAM,
     };
-    Shader(char const* vertex_path, char const* fragment_path);
 
-    Shader(ViewingMode mode);
+    static Shader lighting;
+    static Shader albedo;
+    static Shader const& get_shader_for_mode(ViewingMode);
+    static void init();
+
+    Shader() = default;
+    Shader(char const* vertex_path, char const* fragment_path);
+    Shader(ShaderSource);
+    Shader(Shader const&) = delete;
+    Shader(Shader&&);
+    Shader& operator=(Shader&&);
+
     unsigned int m_id;
     void use() const;
     void set_bool(char const* name, bool value) const;

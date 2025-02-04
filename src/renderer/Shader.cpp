@@ -3,187 +3,152 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 
 /**
- * @brief Collection of shader sources for different shading techniques.
- *
- * The `shader_sources` is a constant array containing the GLSL vertex and fragment shader
- * source codes for various shading techniques. Each entry in the array corresponds to a
- * particular `ViewingMode` and provides a pair of strings: the vertex shader source and
- * the matching fragment shader source. These shaders define the behavior of the rendering
- * pipeline when a specific shading technique is used.
- *
- * @details The supported shading techniques and corresponding shader implementations include:
- *   - `ViewingMode::ALBEDO_SHADING`: Implements basic texture mapping, computing
- *     the final fragment color by sampling a diffuse texture applied to the geometry.
- *     No lighting calculations are performed.
- *   - `ViewingMode::FLAT_SHADING`: Provides flat shading by computing face normals,
- *     resulting in a uniform color for each surface, and applies basic lighting models
- *     including diffuse and ambient components. The normals are not interpolated across
- *     the surface.
- *   - `ViewingMode::BLINN_PHONG_SHADING`: Extends the Phong shading technique by incorporating
- *     the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
- *     highlights while maintaining visual quality.
- *
- * This array facilitates the selection, usage, and management of GPU shader programs
- * within a rendering engine. The shaders are written in GLSL, version 4.10, and are designed
- * to operate in OpenGL rendering pipelines.
+ * Implements basic texture mapping, computing
+ * the final fragment color by sampling a diffuse texture applied to the geometry.
+ * No lighting calculations are performed.
  */
-std::unordered_map<ViewingMode, ShaderSource> const shader_sources{
-    {ViewingMode::ALBEDO,
-        ShaderSource{
-            .vertex_shader = R"(
-            #version 410 core
-            layout (location = 0) in vec3 aPos;
-            layout (location = 1) in vec3 aNormal;
-            layout (location = 2) in vec2 aTexCoords;
+auto const albedo_source = ShaderSource{
+    .vertex_shader = R"(
+        #version 410 core
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec3 aNormal;
+        layout (location = 2) in vec2 aTexCoords;
 
-            out vec2 TexCoords;
+        out vec2 TexCoords;
 
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
 
-            void main() {
-                TexCoords = aTexCoords;
-                gl_Position = projection * view * model * vec4(aPos, 1.0);
-            })",
+        void main() {
+            TexCoords = aTexCoords;
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+        })",
 
-            .fragment_shader = R"(
-            #version 410 core
-            out vec4 FragColor;
-            in vec2 TexCoords;
+    .fragment_shader = R"(
+        #version 410 core
+        out vec4 FragColor;
+        in vec2 TexCoords;
 
-            uniform sampler2D texture_diffuse1;
-            uniform float gamma;
+        uniform sampler2D texture_diffuse;
+        uniform float gamma;
 
-            void main() {
-                vec3 color = texture(texture_diffuse1, TexCoords).rgb;
-                vec3 gammaCorrection = pow(color, vec3(1. / gamma));
-                FragColor = vec4(gammaCorrection, 1.);
-            })"}},
-    {
-        ViewingMode::SOLID,
-        ShaderSource{
-            .vertex_shader = R"(
-            #version 410 core
-            layout (location = 0) in vec3 aPos;       // Vertex position
-            layout (location = 1) in vec3 aNormal;    // Vertex normal
-            layout (location = 2) in vec2 aTexCoords; // Texture UV coordinates
-
-            out vec3 FlatNormal;                 // Pass the face normal to the fragment shader (not interpolated)
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
-
-            void main() {
-                // Calculate face normal in world space (flat shading)
-                mat3 normalMatrix = transpose(inverse(mat3(model)));
-                FlatNormal = normalize(normalMatrix * aNormal);
-                // Transform vertex position to clip space
-                gl_Position = projection * view * model * vec4(aPos, 1.0);
-            })",
-
-            .fragment_shader = R"(
-            #version 410 core
-            struct Light {
-                vec3 direction;
-                vec3 color;
-            };
-            in vec3 FlatNormal;
-            uniform Light light; // Direction of the light source (normalized)
-            out vec4 FragColor;
-
-            void main() {
-                // Calculate grayscale intensity using the Lambertian reflectance model
-                float brightness = max(dot(normalize(FlatNormal), normalize(light.direction)), 0.0);
-                // Output as grayscale
-                FragColor = vec4(vec3(brightness), 1.0);
-            })"},
-    },
-    {
-        ViewingMode::RENDERED,
-        ShaderSource{
-            .vertex_shader = R"(
-            #version 410 core
-            layout (location = 0) in vec3 aPos;
-            layout (location = 1) in vec3 aNormal;
-            layout (location = 2) in vec2 aTexCoords;
-
-            uniform mat4 model;
-            uniform mat4 view;
-            uniform mat4 projection;
-
-            out vec3 FragPos;
-            out vec3 Normal;
-            out vec2 TexCoords;
-
-            void main() {
-                FragPos = vec3(model * vec4(aPos, 1.0));
-                Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
-                TexCoords = aTexCoords;
-                gl_Position = projection * view * vec4(FragPos, 1.0);
-            })",
-
-            .fragment_shader = R"(
-            #version 410 core
-            struct Light {
-                vec3 direction;
-                vec3 color;
-                float power;
-            };
-
-            in vec3 FragPos;
-            in vec3 Normal;
-            in vec2 TexCoords;
-
-            uniform sampler2D texture_diffuse1;
-            uniform Light light;
-            uniform vec3 cameraPos;
-            uniform float ambientStrength;
-            uniform float specularityFactor;
-            uniform float shininess;
-            uniform float gamma;
-
-            out vec4 FragColor;
-
-            void main() {
-                vec3 tex = texture(texture_diffuse1, TexCoords).rgb;
-                vec3 normal = normalize(Normal);
-                vec3 lightDir = normalize(-light.direction);
-
-                // ambient
-                vec3 ambient = ambientStrength * tex;
-
-                // diffuse
-                float diff = max(dot(lightDir, normal), 0.0);
-                vec3 diffuse = diff * light.power * tex;
-
-                // specular
-                vec3 viewDir = normalize(cameraPos - FragPos);
-                vec3 halfDir = normalize(lightDir + viewDir);
-                float spec = pow(max(dot(normal, halfDir), 0.0), shininess/4.);
-                vec3 specular = spec * specularityFactor * light.power * tex;
-
-                vec3 color = ambient + diffuse * light.color + specular * light.color;
-
-                vec3 gammaCorrection = pow(color, vec3(1. / gamma));
-                FragColor = vec4(gammaCorrection, 1.);
-            })",
-        },
-    },
+        void main() {
+            vec3 color = texture(texture_diffuse, TexCoords).rgb;
+            vec3 gammaCorrection = pow(color, vec3(1. / gamma));
+            FragColor = vec4(gammaCorrection, 1.);
+        })",
 };
 
-Shader::Shader(ViewingMode mode)
-{
-    // Extract vertex and fragment shader code
-    char const* vertex_code = shader_sources.at(mode).vertex_shader;
-    char const* fragment_code = shader_sources.at(mode).fragment_shader;
+/*
+ * Extends the Phong shading technique by incorporating
+ * the more efficient Blinn-Phong specular reflection model. This approach adjusts specular
+ * highlights while maintaining visual quality.
+ */
+auto const lighting_source = ShaderSource{
+    .vertex_shader = R"(
+        #version 410 core
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec3 aNormal;
+        layout (location = 2) in vec2 aTexCoords;
 
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        out vec3 FragPos;
+        out vec3 Normal;
+        out vec2 TexCoords;
+
+        void main() {
+            FragPos = vec3(model * vec4(aPos, 1.0));
+            Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
+            TexCoords = aTexCoords;
+            gl_Position = projection * view * vec4(FragPos, 1.0);
+        })",
+
+    .fragment_shader = R"(
+        #version 410 core
+        struct Light {
+            vec3 direction;
+            vec3 color;
+            float power;
+        };
+
+        in vec3 FragPos;
+        in vec3 Normal;
+        in vec2 TexCoords;
+
+        uniform sampler2D texture_diffuse;
+        uniform Light light;
+        uniform vec3 cameraPos;
+        uniform float ambientStrength;
+        uniform float specularityFactor;
+        uniform float shininess;
+        uniform float gamma;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec3 tex = texture(texture_diffuse, TexCoords).rgb;
+            vec3 normal = normalize(Normal);
+            vec3 lightDir = normalize(-light.direction);
+
+            // ambient
+            vec3 ambient = ambientStrength * tex;
+
+            // diffuse
+            float diff = max(dot(lightDir, normal), 0.0);
+            vec3 diffuse = diff * light.power * tex;
+
+            // specular
+            vec3 viewDir = normalize(cameraPos - FragPos);
+            vec3 halfDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(normal, halfDir), 0.0), shininess/4.);
+            vec3 specular = spec * specularityFactor * light.power * tex;
+
+            vec3 color = ambient + diffuse * light.color + specular * light.color;
+
+            vec3 gammaCorrection = pow(color, vec3(1. / gamma));
+            FragColor = vec4(gammaCorrection, 1.);
+        })",
+};
+
+Shader Shader::lighting;
+Shader Shader::albedo;
+
+void Shader::init()
+{
+    // Can't init shaders in static variables, because OpenGL is not initialized there.
+    Shader::lighting = Shader{lighting_source};
+    Shader::albedo = Shader{albedo_source};
+}
+
+Shader const& Shader::get_shader_for_mode(ViewingMode mode)
+{
+    Shader const* shader;
+    switch (mode) {
+    case ViewingMode::ALBEDO:
+        shader = &Shader::albedo;
+        break;
+    case ViewingMode::SOLID:
+    case ViewingMode::RENDERED:
+        shader = &Shader::lighting;
+        break;
+    };
+
+    assert(shader);
+
+    return *shader;
+}
+
+Shader::Shader(ShaderSource source)
+{
     // Compile shaders and set up the shader program
-    auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_code);
-    auto const fragment_shader = compile_shader(ShadingStage::FRAGMENT, fragment_code);
+    auto const vertex_shader = compile_shader(ShadingStage::VERTEX, source.vertex_shader);
+    auto const fragment_shader = compile_shader(ShadingStage::FRAGMENT, source.fragment_shader);
 
     link_shaders_to_program(vertex_shader, fragment_shader);
 
@@ -231,6 +196,22 @@ Shader::Shader(char const* vertex_path, char const* fragment_path)
     // Cleanup shaders as they are already linked into our program
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
+}
+
+Shader::Shader(Shader&& old)
+    : m_id{old.m_id}
+{
+    old.m_id = 0;
+}
+
+Shader& Shader::operator=(Shader&& other)
+{
+    if (this != &other) {
+        m_id = other.m_id;
+        other.m_id = 0;
+    }
+
+    return *this;
 }
 
 void Shader::use() const

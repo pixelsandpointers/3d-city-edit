@@ -21,7 +21,6 @@ private:
 
     std::optional<NodeVariantType> m_selected_item;
     Framebuffer m_model_preview_framebuffer;
-    Shader m_model_preview_shader{ViewingMode::ALBEDO};
     Camera m_model_preview_camera{glm::vec3{}, glm::vec3{}};
     Uniforms m_model_preview_uniforms;
     unsigned int m_preview_texture;

@@ -33,7 +33,7 @@ public:
         AABB);
 
     void draw() const;
-    void draw(Shader& shader) const;
+    void draw(ViewingMode) const;
     [[nodiscard]] bool is_fully_loaded() const;
 
 private:

@@ -52,7 +52,7 @@ public:
     // constructor with vectors
     Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f));
 
-    void draw(Shader&,
+    void draw(ViewingMode,
         Uniforms const&,
         Framebuffer const&,
         InstancedNode const&);

@@ -5,8 +5,6 @@
 
 Viewport::Viewport()
     : m_framebuffer{Framebuffer::create_simple(1, 1)}
-    , m_shader{ViewingMode::RENDERED}
-    , m_last_viewing_mode{ViewingMode::RENDERED}
     , m_camera_controller{CameraController::Type::FREECAM, glm::vec3{}}
 {
 }
@@ -24,18 +22,13 @@ void Viewport::render(double delta_time, ShaderUniformPane const& pane)
             m_framebuffer.resize(size.x, size.y);
         }
 
-        if (pane.viewing_mode != m_last_viewing_mode) {
-            m_shader = Shader{pane.viewing_mode};
-            m_last_viewing_mode = pane.viewing_mode;
-        }
-
         if (pane.draw_wireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
-        m_camera_controller.camera->draw(m_shader, pane.uniforms, m_framebuffer, Project::get_current()->scene.value());
+        m_camera_controller.camera->draw(pane.viewing_mode, pane.uniforms, m_framebuffer, Project::get_current()->scene.value());
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
     }

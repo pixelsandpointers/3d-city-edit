@@ -1,5 +1,7 @@
 #include "renderer/Mesh.hpp"
 
+#include "core/Project.hpp"
+
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Texture const* texture_diffuse, AABB aabb)
     : m_vertices(vertices)
     , m_indices(indices)
@@ -16,12 +18,15 @@ void Mesh::draw() const
     glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader& shader) const
+void Mesh::draw(ViewingMode mode) const
 {
+    auto const& shader = Shader::get_shader_for_mode(mode);
+    auto diffuse_texture_id = mode == ViewingMode::SOLID ? Project::get_current()->fallback_texture()->m_id : m_texture_diffuse->m_id;
+
     // set diffuse texture
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(glGetUniformLocation(shader.m_id, "texture_diffuse"), 0);
-    glBindTexture(GL_TEXTURE_2D, m_texture_diffuse->m_id);
+    glBindTexture(GL_TEXTURE_2D, diffuse_texture_id);
 
     // set active
     glBindVertexArray(m_vao);
