@@ -116,14 +116,64 @@ auto const lighting_source = ShaderSource{
         })",
 };
 
+// http://geoffprewett.com/blog/software/opengl-outline/
+auto const post_process_outline_source = ShaderSource{
+    .vertex_shader = R"(
+        #version 410 core
+        layout (location = 0) in vec2 aPos;
+        layout (location = 1) in vec2 aTexCoords;
+
+        out vec2 TexCoords;
+
+        void main() {
+            TexCoords = aTexCoords;
+            gl_Position = vec4(aPos, 0.0f, 1.0f);
+        }
+    )",
+
+    .fragment_shader = R"(
+        #version 410 core
+        in vec2 TexCoords;
+
+        uniform sampler2D tex;
+        uniform vec3 color;
+
+        out vec4 FragColor;
+
+        #define WIDTH 2
+
+        void main() {
+            vec2 texel_size = 1.0f / textureSize(tex, 0).xy;
+
+            float coverage = 0.0f;
+
+            for (int x = -WIDTH; x <= WIDTH; ++x) {
+                for (int y = -WIDTH; y <= WIDTH; ++y) {
+                    vec2 offset = vec2(x, y) * texel_size;
+                    coverage += texture(tex, TexCoords + offset).r;
+                }
+            }
+            coverage /= (WIDTH * 2.0f + 1.0f) * (WIDTH * 2.0f + 1.0f);
+
+            float alpha = coverage >= 0.99f
+                ? 0.0f
+                : mix(0.0f, 2.0f, coverage);
+
+            FragColor = vec4(color, alpha);
+        }
+    )",
+};
+
 Shader Shader::lighting;
 Shader Shader::albedo;
+Shader Shader::post_process_outline;
 
 void Shader::init()
 {
     // Can't init shaders in static variables, because OpenGL is not initialized there.
     Shader::lighting = Shader{lighting_source};
     Shader::albedo = Shader{albedo_source};
+    Shader::post_process_outline = Shader{post_process_outline_source};
 }
 
 Shader const& Shader::get_shader_for_mode(ViewingMode mode)

@@ -1,5 +1,6 @@
 #include "renderer/Camera.hpp"
 
+#include "core/Project.hpp"
 #include <iostream>
 
 Framebuffer Framebuffer::get_default(int width, int height)
@@ -125,5 +126,80 @@ void Camera::draw(ViewingMode mode,
         }
     });
 
+    auto project = Project::get_current();
+    if (project->selected_node) {
+        if (framebuffer.width != m_mask_framebuffer.width || framebuffer.height != m_mask_framebuffer.height) {
+            m_mask_framebuffer.resize(framebuffer.width, framebuffer.height);
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_mask_framebuffer.id);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // render selected node in white to m_mask_framebuffer (albedo shader with outline color texture)
+        Shader::albedo.use();
+        Shader::albedo.set_mat4("projection", projection);
+        Shader::albedo.set_mat4("view", view);
+        Shader::albedo.set_float("gamma", 1.0f);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, project->white_texture()->m_id);
+        Shader::albedo.set_int("texture_diffuse", 0);
+
+        project->selected_node->traverse([&](auto transform_matrix, auto const& node_data) {
+            for (auto const& mesh : node_data.meshes) {
+                Shader::albedo.set_mat4("model", transform_matrix);
+                mesh.draw();
+            }
+        });
+
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        Shader::post_process_outline.use();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_mask_framebuffer.color_texture);
+
+        Shader::post_process_outline.set_int("tex", 0);
+        Shader::post_process_outline.set_vec3("color", glm::vec3{0.84f, 0.5f, 0.1f});
+
+        draw_quad();
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Camera::draw_quad()
+{
+    if (m_quad_vao == 0) {
+        float quad_vertices[] = {
+            // clang-format off
+            // positions  // texture Coords
+            -1.0f, 1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f,
+            1.0f,  1.0f,  1.0f, 1.0f,
+            1.0f,  -1.0f, 1.0f, 0.0f,
+            // clang-format on
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &m_quad_vao);
+        glGenBuffers(1, &m_quad_vbo);
+        glBindVertexArray(m_quad_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_quad_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    }
+
+    glBindVertexArray(m_quad_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
