@@ -16,8 +16,11 @@ void CameraController::update(float delta_time)
     case Type::FREECAM:
         update_freecam(delta_time);
         break;
-    case Type::ORBIT:
-        update_orbit(delta_time);
+    case Type::BLENDER:
+        update_blender(delta_time);
+        break;
+    case Type::UNITY:
+        update_unity(delta_time);
         break;
     }
 }
@@ -83,7 +86,7 @@ void CameraController::update_freecam(float delta_time)
 }
 
 // Turntable orbit (y axis keeps pointing up) with blender controls
-void CameraController::update_orbit(float delta_time)
+void CameraController::update_blender(float delta_time)
 {
     // As viewed by the target torwards the camera
     auto forward = camera->position - camera->target;
@@ -127,4 +130,40 @@ void CameraController::update_orbit(float delta_time)
         }
         camera->position += forward_normalized * glm::vec3{zoom_step};
     }
+}
+
+void CameraController::update_unity(float delta_time)
+{
+    // As viewed by the target torwards the camera
+    auto forward = camera->target - camera->position;
+    auto forward_normalized = glm::normalize(forward);
+    auto right = glm::normalize(glm::cross(forward_normalized, camera->up));
+
+    // Panning
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
+        auto panning_scalar = movement_speed * delta_time;
+
+        auto screen_up = glm::cross(forward_normalized, right);
+        camera->position -= screen_up * glm::vec3(Input::cursor_delta().y * panning_scalar);
+        camera->position -= right * glm::vec3(Input::cursor_delta().x * panning_scalar);
+    }
+
+    // Rotation
+    auto [yaw, pitch] = direction_to_yaw_pitch(forward);
+
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+        auto look_scalar = rotation_speed * delta_time;
+        pitch -= Input::cursor_delta().y * look_scalar;
+        yaw += Input::cursor_delta().x * look_scalar;
+
+        auto const max_pitch = glm::half_pi<float>() - 0.001f;
+        pitch = std::clamp(pitch, -max_pitch, max_pitch);
+    }
+
+    // Zoom
+    auto scroll_y = static_cast<float>(Input::scroll_delta().y);
+    // FIXME: I have no clue how zooming works in Unity
+    camera->position += forward * scroll_y * zoom_speed * 20.0f;
+
+    camera->target = camera->position + yaw_pitch_to_direction(yaw, pitch);
 }

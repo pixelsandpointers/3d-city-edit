@@ -7,7 +7,8 @@
 struct CameraController {
     enum class Type {
         FREECAM,
-        ORBIT,
+        BLENDER,
+        UNITY,
     };
 
     CameraController(Type, glm::vec3 camera_position);
@@ -26,5 +27,6 @@ struct CameraController {
 
 private:
     void update_freecam(float delta_time);
-    void update_orbit(float delta_time);
+    void update_blender(float delta_time);
+    void update_unity(float delta_time);
 };
