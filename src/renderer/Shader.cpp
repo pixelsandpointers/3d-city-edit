@@ -31,14 +31,21 @@ auto const albedo_source = ShaderSource{
         #version 410 core
         out vec4 FragColor;
         in vec2 TexCoords;
+        in vec4 gl_FragCoord;
 
         uniform sampler2D texture_diffuse;
+        uniform sampler2D texture_opacity;
         uniform float gamma;
 
         void main() {
             vec3 color = texture(texture_diffuse, TexCoords).rgb;
             vec3 gammaCorrection = pow(color, vec3(1. / gamma));
-            FragColor = vec4(gammaCorrection, 1.);
+            FragColor = vec4(gammaCorrection, 1.0f);
+
+            float alpha = texture(texture_opacity, TexCoords).r;
+            if (alpha <= 0.01f) {
+                discard;
+            };
         })",
 };
 
@@ -80,8 +87,10 @@ auto const lighting_source = ShaderSource{
         in vec3 FragPos;
         in vec3 Normal;
         in vec2 TexCoords;
+        in vec4 gl_FragCoord;
 
         uniform sampler2D texture_diffuse;
+        uniform sampler2D texture_opacity;
         uniform Light light;
         uniform vec3 cameraPos;
         uniform float ambientStrength;
@@ -112,7 +121,12 @@ auto const lighting_source = ShaderSource{
             vec3 color = ambient + diffuse * light.color + specular * light.color;
 
             vec3 gammaCorrection = pow(color, vec3(1. / gamma));
-            FragColor = vec4(gammaCorrection, 1.);
+            FragColor = vec4(gammaCorrection, 1.0f);
+
+            float alpha = texture(texture_opacity, TexCoords).r;
+            if (alpha <= 0.01f) {
+                discard;
+            };
         })",
 };
 

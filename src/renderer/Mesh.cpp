@@ -2,10 +2,11 @@
 
 #include "core/Project.hpp"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Texture const* texture_diffuse, AABB aabb)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Texture const* texture_diffuse, Texture const* texture_opacity, AABB aabb)
     : m_vertices(vertices)
     , m_indices(indices)
     , m_texture_diffuse(texture_diffuse)
+    , m_texture_opacity(texture_opacity)
     , aabb(aabb)
 {
     setup_mesh();
@@ -25,8 +26,13 @@ void Mesh::draw(ViewingMode mode) const
 
     // set diffuse texture
     glActiveTexture(GL_TEXTURE0);
-    glUniform1i(glGetUniformLocation(shader.m_id, "texture_diffuse"), 0);
+    shader.set_int("texture_diffuse", 0);
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_id);
+
+    // set opacity texture
+    glActiveTexture(GL_TEXTURE1);
+    shader.set_int("texture_opacity", 1);
+    glBindTexture(GL_TEXTURE_2D, m_texture_opacity->m_id);
 
     // set active
     glBindVertexArray(m_vao);

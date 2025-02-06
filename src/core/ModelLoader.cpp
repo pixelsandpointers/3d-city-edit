@@ -5,6 +5,7 @@
 #include "renderer/Texture.hpp"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+#include <fstream>
 #include <glad/glad.h>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
@@ -83,6 +84,66 @@ Texture const* load_material_texture(aiMaterial* mat, aiTextureType type, std::f
     return texture;
 }
 
+Texture const* load_mask_texture(aiMaterial* mat, std::filesystem::path directory)
+{
+    if (mat->GetTextureCount(aiTextureType_DIFFUSE) == 0) {
+        return nullptr;
+    }
+
+    aiString string;
+    mat->GetTexture(aiTextureType_DIFFUSE, 0, &string);
+    auto filename = std::string{string.C_Str()};
+
+    auto texture_path = guess_texture_path(directory, filename);
+    if (!texture_path.has_value()) {
+        std::cout << "Failed to guess path for bogus texture name '" << filename << "'\n";
+        return nullptr;
+    }
+
+    auto project = Project::get_current();
+    assert(project);
+    auto material_cache_node_path = texture_path.value().replace_extension(".mat");
+
+    try {
+        auto material_file_stream = std::ifstream{material_cache_node_path};
+
+        std::string line;
+        bool in_mask_line = false;
+        std::optional<std::string> mask_texture_guid;
+        while (std::getline(material_file_stream, line)) {
+            if (in_mask_line) {
+                auto start_pos = line.find("guid: ");
+                if (start_pos == std::string::npos) {
+                    return nullptr;
+                }
+                auto const guid_length = 32;
+                mask_texture_guid = line.substr(start_pos + 6, guid_length);
+                break;
+            }
+
+            auto start_pos = line.find_first_not_of(" ");
+            if (line.compare(start_pos, 7, "- _Mask") != 0) {
+                continue;
+            }
+
+            in_mask_line = true;
+        }
+
+        if (!mask_texture_guid.has_value()) {
+            return nullptr;
+        }
+
+        auto mask_path = project->get_fs_cache_from_guid(mask_texture_guid.value());
+        if (!mask_path.has_value()) {
+            return nullptr;
+        }
+
+        return project->get_texture(mask_path.value());
+    } catch (std::exception&) {
+        return nullptr;
+    }
+}
+
 Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path directory)
 {
     std::vector<Vertex> vertices;
@@ -129,10 +190,17 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
     // assign materials if any
     auto material = scene->mMaterials[mesh->mMaterialIndex];
 
-    // diffuse
-    auto diffuse = load_material_texture(material, aiTextureType_DIFFUSE, directory);
-    if (!diffuse) {
-        diffuse = Project::get_current()->fallback_texture();
+    auto texture_diffuse = load_material_texture(material, aiTextureType_DIFFUSE, directory);
+    if (!texture_diffuse) {
+        texture_diffuse = Project::get_current()->fallback_texture();
+    }
+
+    // TODO: Find mask texture
+    // Each texture has a <texture name>.meta file that includes a guid
+    // And each material has a list of linked textures that include a base and mask texture guid
+    auto texture_opacity = load_mask_texture(material, directory);
+    if (!texture_opacity) {
+        texture_opacity = Project::get_current()->white_texture();
     }
 
     auto aabb = AABB{
@@ -140,7 +208,7 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
         .max = ai_to_glm_vec(mesh->mAABB.mMax),
     };
 
-    return Mesh{vertices, indices, diffuse, aabb};
+    return Mesh{vertices, indices, texture_diffuse, texture_opacity, aabb};
 }
 
 Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory, NodeLocation parent_location)
