@@ -15,6 +15,8 @@ struct FSCacheNode {
         DIRECTORY,
         MODEL,
         TEXTURE,
+        UNITY_MATERIAL,
+        UNITY_META,
         OTHER,
     };
 
@@ -39,6 +41,7 @@ public:
 
     FSCacheNode* get_fs_cache();
     FSCacheNode* get_fs_cache(std::filesystem::path);
+    std::optional<std::filesystem::path> get_fs_cache_from_guid(std::string const&) const;
     Texture const* get_texture(std::filesystem::path);
     Node* get_model(std::filesystem::path);
     Node* get_cached_model(std::filesystem::path);
@@ -56,7 +59,9 @@ private:
     std::unordered_map<std::filesystem::path, Node> m_models;
     std::unique_ptr<FSCacheNode> m_fs_cache;
     double m_fs_cache_last_updated{0};
+    std::unordered_map<std::string, std::filesystem::path> m_guid_mappings;
 
     Project(std::filesystem::path);
     void rebuild_fs_cache();
+    void rebuild_fs_cache_helper(FSCacheNode&);
 };

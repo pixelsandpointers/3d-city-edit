@@ -25,11 +25,13 @@ public:
     std::vector<Vertex> m_vertices;
     std::vector<unsigned int> m_indices;
     Texture const* m_texture_diffuse;
+    Texture const* m_texture_opacity;
     AABB aabb;
 
     Mesh(std::vector<Vertex> vertices,
         std::vector<unsigned int> indices,
         Texture const* texture_diffuse,
+        Texture const* texture_opacity,
         AABB);
 
     void draw() const;

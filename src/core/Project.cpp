@@ -99,6 +99,19 @@ FSCacheNode* Project::get_fs_cache(std::filesystem::path path)
     return m_fs_cache->get_child(path);
 }
 
+std::optional<std::filesystem::path> Project::get_fs_cache_from_guid(std::string const& guid) const
+{
+    if (guid.length() != 32) {
+        return {};
+    }
+
+    if (auto it = m_guid_mappings.find(guid); it != m_guid_mappings.end()) {
+        return it->second;
+    }
+
+    return {};
+}
+
 Texture const* Project::get_texture(std::filesystem::path path)
 {
     if (!path.is_absolute()) {
@@ -240,6 +253,14 @@ FSCacheNode::Type identify_file(std::filesystem::path path)
         }
     }
 
+    if (case_insensitive_equals(file_ending, ".mat")) {
+        return FSCacheNode::Type::UNITY_MATERIAL;
+    }
+
+    if (case_insensitive_equals(file_ending, ".meta")) {
+        return FSCacheNode::Type::UNITY_META;
+    }
+
     return FSCacheNode::Type::OTHER;
 }
 
@@ -262,7 +283,29 @@ bool is_fs_cache_valid(FSCacheNode const& cache_node)
     return true;
 }
 
-void rebuild_fs_cache_helper(FSCacheNode& cache_node)
+std::optional<std::string> get_unity_guid(std::filesystem::path path)
+{
+    auto meta_path = path.string() + ".meta";
+    if (!std::filesystem::is_regular_file(meta_path)) {
+        return {};
+    }
+
+    auto meta_file_stream = std::ifstream{meta_path};
+
+    std::string line;
+    while (std::getline(meta_file_stream, line)) {
+        auto separator_pos = line.find_first_of(":");
+        if (line.compare(0, separator_pos, "guid") != 0) {
+            continue;
+        }
+
+        return line.substr(separator_pos + 2);
+    }
+
+    return {};
+}
+
+void Project::rebuild_fs_cache_helper(FSCacheNode& cache_node)
 {
     if (!std::filesystem::is_directory(cache_node.path)) {
         return;
@@ -290,6 +333,13 @@ void rebuild_fs_cache_helper(FSCacheNode& cache_node)
             .type = file_type,
             .children = {},
         });
+
+        if (file_type == FSCacheNode::Type::TEXTURE) {
+            auto unity_guid = get_unity_guid(entry.path());
+            if (unity_guid.has_value()) {
+                m_guid_mappings[unity_guid.value()] = entry.path();
+            }
+        }
 
         if (file_type == FSCacheNode::Type::DIRECTORY) {
             rebuild_fs_cache_helper(new_node);
