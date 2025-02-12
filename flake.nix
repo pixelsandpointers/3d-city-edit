@@ -23,7 +23,15 @@
             assimp
             glm
             glfw
-            (imgui.override { IMGUI_BUILD_GLFW_BINDING = true; })
+            ((imgui.overrideAttrs rec {
+              version = "1.91.5-docking";
+              src = fetchFromGitHub {
+                owner = "ocornut";
+                repo = "imgui";
+                tag = "v${version}";
+                hash = "sha256-6VOs7a31bEfAG75SQAY2X90h/f/HvqZmN615WXYkUOA=";
+              };
+            }).override { IMGUI_BUILD_GLFW_BINDING = true; })
             zlib
           ];
         };
