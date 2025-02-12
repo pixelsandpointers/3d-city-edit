@@ -9,20 +9,14 @@
 ObjectDetails::ObjectDetails() = default;
 
 char object_label[128] = {""};
-bool toggle_shading = false;
 
 void ObjectDetails::render()
 {
-    ImVec2 min_size(300, 150); // Base minimum size
-    ImVec2 max_size(FLT_MAX, FLT_MAX); // No maximum size limit
-
     auto transform_changed = false;
     auto project = Project::get_current();
     auto node = project->selected_node;
 
-    // Apply size constraint before creating the window
-    ImGui::SetNextWindowSizeConstraints(min_size, max_size);
-    if (ImGui::Begin("Object Details", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+    if (ImGui::Begin("Object Details", nullptr)) {
         if (!node) {
             ImGui::Text("No node selected");
             ImGui::End();
