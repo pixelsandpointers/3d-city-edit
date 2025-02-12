@@ -1,6 +1,7 @@
 #include "core/AsyncTaskQueue.hpp"
 #include "core/Input.hpp"
 #include "core/Project.hpp"
+#include "imgui_internal.h"
 #include "renderer/Camera.hpp"
 #include "renderer/Shader.hpp"
 #include "ui/AssetBrowser.hpp"
@@ -28,6 +29,33 @@ void glfw_window_size_callback(GLFWwindow*, int width, int height)
     framebuffer.resize(width, height);
 }
 
+void setup_dock_builder()
+{
+    int const dockspace = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+    static bool first_time = true;
+
+    if (first_time) {
+        first_time = false;
+
+        ImGuiID dockspace_left_20, dockspace_right_80, dockspace_right_20, content_main, content_left_top, content_left_bottom, content_right_top, content_right_bottom;
+
+        // splitting the viewport into subnodes: left_20 is a partition into 20% left, 80% right
+        ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.2f, &dockspace_left_20, &dockspace_right_80);
+        ImGui::DockBuilderSplitNode(dockspace_left_20, ImGuiDir_Up, 0.7f, &content_left_top, &content_left_bottom);
+        ImGui::DockBuilderSplitNode(dockspace_right_80, ImGuiDir_Left, 0.75f, &content_main, &dockspace_right_20);
+        ImGui::DockBuilderSplitNode(dockspace_right_20, ImGuiDir_Up, 0.2f, &content_right_top, &content_right_bottom);
+
+        // docking components
+        ImGui::DockBuilderDockWindow("Asset Browser", content_left_top);
+        ImGui::DockBuilderDockWindow("Shading and Lighting Settings", content_left_bottom);
+        ImGui::DockBuilderDockWindow("Viewport", content_main);
+        ImGui::DockBuilderDockWindow("Object Details", content_right_top);
+        ImGui::DockBuilderDockWindow("Object Tree", content_right_bottom);
+
+        ImGui::DockBuilderFinish(dockspace);
+    }
+}
+
 int main()
 {
     glfwSetErrorCallback(glfw_error_callback);
@@ -36,6 +64,7 @@ int main()
         std::cout << "glfwInit() failed\n";
         return -1;
     }
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -141,7 +170,7 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+        setup_dock_builder(); // create docking layout before components are rendered
 
         object_details_pane.render();
         object_selection_tree.render();
