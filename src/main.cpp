@@ -6,7 +6,7 @@
 #include "ui/AssetBrowser.hpp"
 #include "ui/ObjectDetails.hpp"
 #include "ui/ObjectSelectionTree.hpp"
-#include "ui/ShaderUniformPane.hpp"
+#include "ui/SettingsPane.hpp"
 #include "ui/Viewport.hpp"
 
 #include <filesystem>
@@ -114,7 +114,7 @@ int main()
     // INIT UI
     ObjectDetails object_details_pane{};
     ObjectSelectionTree object_selection_tree{};
-    ShaderUniformPane shader_uniform_pane{};
+    SettingsPane settings_pane{};
 
     auto asset_browser = AssetBrowser{};
     auto viewport_window = Viewport{};
@@ -142,9 +142,9 @@ int main()
 
         object_details_pane.render();
         object_selection_tree.render();
-        shader_uniform_pane.render();
+        settings_pane.render();
         asset_browser.render();
-        viewport_window.render(delta_time, shader_uniform_pane);
+        viewport_window.render(delta_time, settings_pane);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
