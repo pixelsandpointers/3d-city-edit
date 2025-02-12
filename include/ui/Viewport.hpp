@@ -4,12 +4,10 @@
 #include "renderer/Camera.hpp"
 #include <imgui.h>
 
-struct SettingsPane;
-
 struct Viewport {
     Viewport();
     // TODO: Move the shader stuff to some config (maybe as Project::config?) and remove the SettingsPane parameter.
-    void render(double delta_time, SettingsPane const&);
+    void render(double delta_time);
 
 private:
     Framebuffer m_framebuffer;

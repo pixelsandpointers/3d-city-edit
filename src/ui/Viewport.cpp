@@ -1,7 +1,6 @@
 #include "ui/Viewport.hpp"
 
 #include "core/Project.hpp"
-#include "ui/SettingsPane.hpp"
 
 Viewport::Viewport()
     : m_framebuffer{Framebuffer::create_simple(1, 1)}
@@ -9,10 +8,16 @@ Viewport::Viewport()
 {
 }
 
-void Viewport::render(double delta_time, SettingsPane const& pane)
+void Viewport::render(double delta_time)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     if (ImGui::Begin("Viewport")) {
+        auto project = Project::get_current();
+        auto& config = project->config;
+
+        m_camera_controller.camera->position = config.camera_position;
+        m_camera_controller.camera->target = config.camera_target;
+
         if (ImGui::IsWindowFocused()) {
             m_camera_controller.update(delta_time);
         }
@@ -22,16 +27,19 @@ void Viewport::render(double delta_time, SettingsPane const& pane)
             m_framebuffer.resize(size.x, size.y);
         }
 
-        if (pane.draw_wireframe) {
+        if (config.draw_wireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
-        m_camera_controller.type = pane.camera_type;
-        m_camera_controller.movement_speed = pane.movement_speed;
-        m_camera_controller.rotation_speed = pane.rotation_speed;
-        m_camera_controller.zoom_speed = pane.zoom_speed;
-        m_camera_controller.camera->draw(pane.viewing_mode, pane.uniforms, m_framebuffer, Project::get_current()->scene.value());
+        m_camera_controller.type = config.camera_controller_type;
+        m_camera_controller.movement_speed = config.movement_speed;
+        m_camera_controller.rotation_speed = config.rotation_speed;
+        m_camera_controller.zoom_speed = config.zoom_speed;
+        m_camera_controller.camera->draw(config.viewing_mode, config.viewport_uniforms, m_framebuffer, project->scene.value());
+
+        config.camera_position = m_camera_controller.camera->position;
+        config.camera_target = m_camera_controller.camera->target;
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
     }

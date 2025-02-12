@@ -16,6 +16,17 @@ InstancedNode Serializer::deserialize_scene(std::istream& source) const
     return deserialize<InstancedNode>(json);
 }
 
+void Serializer::serialize(Config const& source, std::ostream& target) const
+{
+    target << std::setw(4) << serialize(source);
+}
+
+Config Serializer::deserialize_config(std::istream& source) const
+{
+    auto json = nlohmann::json::parse(source);
+    return deserialize<Config>(json);
+}
+
 nlohmann::json Serializer::serialize(InstancedNode const& source) const
 {
     nlohmann::json target;
@@ -49,6 +60,16 @@ nlohmann::json Serializer::serialize(glm::vec3 const& source) const
     return target;
 }
 
+nlohmann::json Serializer::serialize(glm::vec4 const& source) const
+{
+    nlohmann::json target;
+    target["x"] = source.x;
+    target["y"] = source.y;
+    target["z"] = source.z;
+    target["w"] = source.w;
+    return target;
+}
+
 nlohmann::json Serializer::serialize(glm::quat const& source) const
 {
     nlohmann::json target;
@@ -56,6 +77,35 @@ nlohmann::json Serializer::serialize(glm::quat const& source) const
     target["y"] = source.y;
     target["z"] = source.z;
     target["w"] = source.w;
+    return target;
+}
+
+nlohmann::json Serializer::serialize(Config const& source) const
+{
+    nlohmann::json target;
+    target["viewing_mode"] = source.viewing_mode;
+    target["viewport_uniforms"] = serialize(source.viewport_uniforms);
+    target["draw_wireframe"] = source.draw_wireframe;
+    target["fallback_color"] = serialize(source.fallback_color);
+    target["camera_controller_type"] = source.camera_controller_type;
+    target["movement_speed"] = source.movement_speed;
+    target["rotation_speed"] = source.rotation_speed;
+    target["zoom_speed"] = source.zoom_speed;
+    target["camera_position"] = serialize(source.camera_position);
+    target["camera_target"] = serialize(source.camera_target);
+    return target;
+}
+
+nlohmann::json Serializer::serialize(Uniforms const& source) const
+{
+    nlohmann::json target;
+    target["ambient_strength"] = source.ambient_strength;
+    target["specularity_factor"] = source.specularity_factor;
+    target["shininess"] = source.shininess;
+    target["gamma"] = source.gamma;
+    target["light.direction"] = serialize(source.light.direction);
+    target["light.color"] = serialize(source.light.color);
+    target["light.power"] = source.light.power;
     return target;
 }
 
@@ -99,7 +149,46 @@ glm::vec3 Serializer::deserialize(nlohmann::json& source) const
 }
 
 template <>
+glm::vec4 Serializer::deserialize(nlohmann::json& source) const
+{
+    return glm::vec4{source["x"], source["y"], source["z"], source["w"]};
+}
+
+template <>
 glm::quat Serializer::deserialize(nlohmann::json& source) const
 {
     return glm::quat{source["w"], source["x"], source["y"], source["z"]};
+}
+
+template <>
+Config Serializer::deserialize(nlohmann::json& source) const
+{
+    return Config{
+        .viewing_mode = source["viewing_mode"],
+        .viewport_uniforms = deserialize<Uniforms>(source["viewport_uniforms"]),
+        .draw_wireframe = source["draw_wireframe"],
+        .fallback_color = deserialize<glm::vec3>(source["fallback_color"]),
+        .camera_controller_type = source["camera_controller_type"],
+        .movement_speed = source["movement_speed"],
+        .rotation_speed = source["rotation_speed"],
+        .zoom_speed = source["zoom_speed"],
+        .camera_position = deserialize<glm::vec3>(source["camera_position"]),
+        .camera_target = deserialize<glm::vec3>(source["camera_target"]),
+    };
+}
+
+template <>
+Uniforms Serializer::deserialize(nlohmann::json& source) const
+{
+    return Uniforms{
+        .ambient_strength = source["ambient_strength"],
+        .specularity_factor = source["specularity_factor"],
+        .shininess = source["shininess"],
+        .gamma = source["gamma"],
+        .light = {
+            .direction = deserialize<glm::vec4>(source["light.direction"]),
+            .color = deserialize<glm::vec3>(source["light.color"]),
+            .power = source["light.power"],
+        },
+    };
 }

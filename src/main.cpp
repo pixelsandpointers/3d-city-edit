@@ -177,7 +177,7 @@ int main()
         object_selection_tree.render();
         settings_pane.render();
         asset_browser.render();
-        viewport_window.render(delta_time, settings_pane);
+        viewport_window.render(delta_time);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
