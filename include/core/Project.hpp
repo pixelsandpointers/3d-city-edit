@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Config.hpp"
 #include "core/Scene.hpp"
 #include "renderer/Texture.hpp"
 #include <filesystem>
@@ -30,6 +31,7 @@ public:
     std::filesystem::path root;
     InstancedNode* selected_node{nullptr};
     std::optional<InstancedNode> scene;
+    Config config;
 
     static Project* get_current();
     static void load(std::filesystem::path);

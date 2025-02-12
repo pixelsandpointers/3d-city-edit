@@ -56,10 +56,21 @@ void Project::load(std::filesystem::path path)
     // Ugly workaround for `std::make_unique` not being able to access private constructors
     current = std::unique_ptr<Project>(new Project(path));
 
+    auto serializer = Serializer{*current};
+
+    try {
+        auto project_config_file = path / "config.json";
+        if (std::filesystem::exists(project_config_file)) {
+            auto stream = std::ifstream{project_config_file};
+            current->config = serializer.deserialize_config(stream);
+        }
+    } catch (std::exception const& e) {
+        std::cerr << e.what() << "\n";
+    }
+
     try {
         auto scene_file = path / "scene.json";
         if (std::filesystem::exists(scene_file)) {
-            auto serializer = Serializer{*current};
             auto stream = std::ifstream{scene_file};
             current->scene = serializer.deserialize_scene(stream);
         }
@@ -341,11 +352,15 @@ Texture const* Project::white_texture() const
 
 void Project::store()
 {
+    auto serializer = Serializer{*this};
+
     if (scene.has_value()) {
         auto scene_file = std::ofstream{root / "scene.json"};
-        auto serializer = Serializer{*this};
         serializer.serialize(scene.value(), scene_file);
     }
 
-    // TODO: Serialize config
+    {
+        auto config_file = std::ofstream{root / "config.json"};
+        serializer.serialize(config, config_file);
+    }
 }
