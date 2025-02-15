@@ -28,6 +28,9 @@ void Viewport::render(double delta_time, SettingsPane const& pane)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         m_camera_controller.type = pane.camera_type;
+        m_camera_controller.movement_speed = pane.movement_speed;
+        m_camera_controller.rotation_speed = pane.rotation_speed;
+        m_camera_controller.zoom_speed = pane.zoom_speed;
         m_camera_controller.camera->draw(pane.viewing_mode, pane.uniforms, m_framebuffer, Project::get_current()->scene.value());
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
