@@ -111,7 +111,7 @@ void AssetBrowser::render()
     if (ImGui::Begin("Asset Browser")) {
 
         auto available_region = ImGui::GetContentRegionAvail();
-        if (ImGui::BeginChild("tree", ImVec2{available_region.x * 0.5f, available_region.y})) {
+        if (ImGui::BeginChild("tree", ImVec2{available_region.x, available_region.y * 0.5f})) {
             if (ImGui::BeginTable("assetbrowser_directory_tree", 1)) {
                 traverse_directory(*Project::get_current()->get_fs_cache());
                 ImGui::EndTable();
@@ -119,9 +119,9 @@ void AssetBrowser::render()
         }
         ImGui::EndChild();
 
-        ImGui::SameLine();
+        ImGui::SeparatorText("Preview");
 
-        if (ImGui::BeginChild("preview", ImVec2{available_region.x * 0.5f, available_region.y})) {
+        if (ImGui::BeginChild("preview")) {
             prepare_preview();
             ImGui::Text("%s", m_preview_name.c_str());
             if (m_preview_texture) {
