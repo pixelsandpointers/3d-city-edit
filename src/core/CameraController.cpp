@@ -135,15 +135,14 @@ void CameraController::update_blender(float delta_time)
 void CameraController::update_unity(float delta_time)
 {
     // As viewed by the target torwards the camera
-    auto forward = camera->target - camera->position;
-    auto forward_normalized = glm::normalize(forward);
-    auto right = glm::normalize(glm::cross(forward_normalized, camera->up));
+    auto forward = glm::normalize(camera->target - camera->position);
+    auto right = glm::normalize(glm::cross(forward, camera->up));
 
     // Panning
     if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
         auto panning_scalar = movement_speed * delta_time;
 
-        auto screen_up = glm::cross(forward_normalized, right);
+        auto screen_up = glm::cross(forward, right);
         camera->position -= screen_up * glm::vec3(Input::cursor_delta().y * panning_scalar);
         camera->position -= right * glm::vec3(Input::cursor_delta().x * panning_scalar);
     }

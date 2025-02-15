@@ -40,7 +40,8 @@ void SettingsPane::render()
         if (ImGui::BeginChild("Camera Settings")) {
             std::unordered_map<CameraController::Type, char const*> const camera_type_map{
                 {CameraController::Type::FREECAM, "Freecam"},
-                {CameraController::Type::BLENDER, "Blender"}};
+                {CameraController::Type::BLENDER, "Blender"},
+                {CameraController::Type::UNITY, "Unity"}};
 
             ImGui::SeparatorText("Camera Mode");
 
