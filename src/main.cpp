@@ -47,7 +47,7 @@ void setup_dock_builder()
 
         // docking components
         ImGui::DockBuilderDockWindow("Asset Browser", content_left_top);
-        ImGui::DockBuilderDockWindow("Shading and Lighting Settings", content_left_bottom);
+        ImGui::DockBuilderDockWindow("Settings", content_left_bottom);
         ImGui::DockBuilderDockWindow("Viewport", content_main);
         ImGui::DockBuilderDockWindow("Object Details", content_right_top);
         ImGui::DockBuilderDockWindow("Object Tree", content_right_bottom);
