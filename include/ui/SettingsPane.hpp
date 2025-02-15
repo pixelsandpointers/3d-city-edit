@@ -12,7 +12,7 @@ struct SettingsPane {
     glm::vec3 fallback_color{255, 255, 255};
     Uniforms uniforms{};
     ViewingMode viewing_mode = ViewingMode::RENDERED;
-    CameraController::Type camera_type = CameraController::Type::FREECAM;
+    CameraController::Type camera_type = CameraController::Type::UNITY;
     // Movement speed in distance / second
     float movement_speed{1000.0f};
 
