@@ -54,6 +54,13 @@ void SettingsPane::render()
                 }
                 ImGui::EndCombo();
             }
+
+            ImGui::SeparatorText("Camera Speed");
+
+            ImGui::InputFloat("Movement Speed unit/s", &movement_speed, 100.0f);
+            ImGui::InputFloat("Rotation Speed rad/s", &rotation_speed, 0.05f);
+            ImGui::InputFloat("Zoom Speed", &zoom_speed, 0.1f);
+
             ImGui::SeparatorText("Textures");
 
             ImGui::ColorEdit3("Fallback Texture Color", &fallback_color[0]);
