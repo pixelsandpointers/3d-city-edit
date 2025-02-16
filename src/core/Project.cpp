@@ -83,8 +83,6 @@ Project::Project(std::filesystem::path root)
     : root{root}
 {
     rebuild_fs_cache();
-    // TODO: Allow setting and changing this color in the settings
-    m_fallback_texture = Texture::single_color(glm::vec4{1.0f});
 }
 
 FSCacheNode* Project::get_fs_cache()
@@ -319,7 +317,7 @@ void Project::rebuild_fs_cache()
     rebuild_fs_cache_helper(*m_fs_cache);
 }
 
-void Project::rebuild_fs_cache_timed(double current_time)
+void Project::update(double current_time)
 {
     auto const update_interval = 5.0;
     if (current_time - m_fs_cache_last_updated < update_interval) {
@@ -338,6 +336,10 @@ void Project::rebuild_fs_cache_timed(double current_time)
             rebuild_fs_cache();
         });
     });
+
+    if (config.fallback_color != glm::vec3{m_fallback_texture.color()}) {
+        m_fallback_texture.color(glm::vec4{config.fallback_color, 1.0f});
+    }
 }
 
 Texture const* Project::fallback_texture() const
