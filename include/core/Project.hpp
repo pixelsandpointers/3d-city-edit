@@ -43,15 +43,15 @@ public:
     Node* get_model(std::filesystem::path);
     Node* get_cached_model(std::filesystem::path);
     Node* get_node(NodeLocation);
-    void rebuild_fs_cache_timed(double current_time);
+    void update(double current_time);
     Texture const* fallback_texture() const;
     Texture const* white_texture() const;
 
 private:
     static std::unique_ptr<Project> current;
 
-    Texture m_fallback_texture;
-    Texture m_white_texture{Texture::single_color(glm::vec4{1.0f})};
+    ColorTexture m_fallback_texture{ColorTexture::single_color(glm::vec4{1.0f})};
+    ColorTexture m_white_texture{ColorTexture::single_color(glm::vec4{1.0f})};
     std::unordered_map<std::filesystem::path, Texture> m_textures;
     std::unordered_map<std::filesystem::path, Node> m_models;
     std::unique_ptr<FSCacheNode> m_fs_cache;

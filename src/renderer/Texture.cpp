@@ -83,20 +83,19 @@ Texture Texture::fallback_placeholder(unsigned int id)
     return Texture{id, 0, 0, 0, false};
 }
 
-Texture Texture::single_color(glm::vec4 color)
+ColorTexture Texture::single_color(glm::vec4 color)
 {
     unsigned int id;
     glGenTextures(1, &id);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(color));
-    glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    return Texture{id, 1, 1, 4, true};
+    return ColorTexture{id, color};
 }
 
 Texture::Texture(Texture&& other)
@@ -137,4 +136,22 @@ Texture::Texture(unsigned int m_id, int width, int height, int channels, bool is
     , height{height}
     , channels{channels}
     , is_loaded{is_loaded}
+{ }
+
+glm::vec4 ColorTexture::color()
+{
+    return m_color;
+}
+
+void ColorTexture::color(glm::vec4 color)
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(color));
+    m_color = color;
+}
+
+ColorTexture::ColorTexture(unsigned int id, glm::vec4 color)
+    : Texture{id, 1, 1, 4, true}
+    , m_color{color}
 { }

@@ -162,7 +162,7 @@ int main()
 
         Input::update();
 
-        project->rebuild_fs_cache_timed(current_frame);
+        project->update(current_frame);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
