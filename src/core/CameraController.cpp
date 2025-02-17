@@ -138,6 +138,28 @@ void CameraController::update_unity(float delta_time)
     auto forward = glm::normalize(camera->target - camera->position);
     auto right = glm::normalize(glm::cross(forward, camera->up));
 
+    // Movement
+    if (Input::button_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+        auto movement_scalar = movement_speed * delta_time;
+
+        if (Input::key_pressed(GLFW_KEY_LEFT_SHIFT)) {
+            movement_scalar *= 2;
+        }
+
+        if (Input::key_pressed(GLFW_KEY_W)) {
+            camera->position += forward * movement_scalar;
+        }
+        if (Input::key_pressed(GLFW_KEY_S)) {
+            camera->position -= forward * movement_scalar;
+        }
+        if (Input::key_pressed(GLFW_KEY_D)) {
+            camera->position += right * movement_scalar;
+        }
+        if (Input::key_pressed(GLFW_KEY_A)) {
+            camera->position -= right * movement_scalar;
+        }
+    }
+
     // Panning
     if (Input::button_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
         auto panning_scalar = movement_speed * delta_time;
