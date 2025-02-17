@@ -52,7 +52,7 @@ nix develop
 Then build a debug build with the following commands:
 
 ```sh
-cmake -B build -G Ninja -D CMAKE_BUILD_TYPE=Release
+cmake -B build -G Ninja -D CMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```
 
