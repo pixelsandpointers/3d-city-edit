@@ -116,6 +116,7 @@ PointerAlignment: Left
 QualifierOrder: [ 'inline', 'static', 'type', 'const', 'volatile' ]
 QualifierAlignment: Custom
 ReflowComments:  true
+SeparateDefinitionBlocks: Always
 SortIncludes:    true
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
