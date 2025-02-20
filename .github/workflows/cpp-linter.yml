@@ -1,0 +1,37 @@
+name: cpp-linter
+on:
+  pull_request:
+    branches: [main]
+    paths: ['**.cpp', '**.hpp']
+  push:
+    branches: [main]
+    paths: ['**.cpp', '**.hpp']
+
+jobs:
+  cpp-linter:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install libglfw3-dev libassimp-dev
+
+      - name: Configure CMake to build compilation database
+        run: cmake -B "${{github.workspace}}/build" -D CMAKE_BUILD_TYPE=Release -G 'Unix Makefiles'
+
+      - uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: 'file'  # Use .clang-format config file
+          tidy-checks: '' # Use .clang-tidy config file
+          version: 18
+          ignore: '.github|vendor'
+          database: 'build'
+
+      - name: Fail fast?!
+        if: steps.linter.outputs.checks-failed > 0
+        run: exit 1
