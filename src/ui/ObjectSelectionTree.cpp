@@ -30,10 +30,12 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             ? ImGuiTreeNodeFlags_Selected
             : ImGuiTreeNodeFlags_None;
 
+        auto const treenode_label = child.name + "##node_" + std::to_string(m_imgui_treenode_id++);
+
         if (!child.children.empty()) {
-            open = ImGui::TreeNodeEx(child.name.c_str(), flags_selected);
+            open = ImGui::TreeNodeEx(treenode_label.c_str(), flags_selected);
         } else {
-            ImGui::TreeNodeEx(child.name.c_str(), imgui_treenode_leaf_flags | flags_selected);
+            ImGui::TreeNodeEx(treenode_label.c_str(), imgui_treenode_leaf_flags | flags_selected);
         }
 
         // Drop node onto TreeNode -> instantiate as child
@@ -84,6 +86,7 @@ void ObjectSelectionTree::render()
         if (auto& scene = Project::get_current()->scene; scene.has_value()) {
             if (ImGui::BeginTable("table0", 1)) {
                 m_prev_rect = {};
+                m_imgui_treenode_id = 0;
                 traverse_nodes(scene.value());
             }
             ImGui::EndTable();
