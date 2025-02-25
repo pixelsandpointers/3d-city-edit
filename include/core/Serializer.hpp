@@ -14,7 +14,7 @@ public:
     { }
 
     void serialize(InstancedNode const&, std::ostream&) const;
-    InstancedNode deserialize_scene(std::istream&) const;
+    std::unique_ptr<InstancedNode> deserialize_scene(std::istream&) const;
     void serialize(Config const&, std::ostream&) const;
     Config deserialize_config(std::istream&) const;
 
@@ -31,7 +31,7 @@ private:
     template <class T>
     T deserialize(nlohmann::json&) const;
     template <>
-    InstancedNode deserialize(nlohmann::json& source) const;
+    std::unique_ptr<InstancedNode> deserialize(nlohmann::json& source) const;
     template <>
     glm::vec3 deserialize(nlohmann::json& source) const;
     template <>

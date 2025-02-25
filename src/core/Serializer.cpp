@@ -10,10 +10,10 @@ void Serializer::serialize(InstancedNode const& source, std::ostream& target) co
     target << std::setw(4) << serialize(source);
 }
 
-InstancedNode Serializer::deserialize_scene(std::istream& source) const
+std::unique_ptr<InstancedNode> Serializer::deserialize_scene(std::istream& source) const
 {
     auto json = nlohmann::json::parse(source);
-    return deserialize<InstancedNode>(json);
+    return deserialize<std::unique_ptr<InstancedNode>>(json);
 }
 
 void Serializer::serialize(Config const& source, std::ostream& target) const
@@ -45,7 +45,7 @@ nlohmann::json Serializer::serialize(InstancedNode const& source) const
 
     auto children = nlohmann::json::array();
     for (auto const& child : source.children) {
-        children.push_back(serialize(child));
+        children.push_back(serialize(*child));
     }
     target["children"] = children;
     return target;
@@ -110,7 +110,7 @@ nlohmann::json Serializer::serialize(Uniforms const& source) const
 }
 
 template <>
-InstancedNode Serializer::deserialize(nlohmann::json& source) const
+std::unique_ptr<InstancedNode> Serializer::deserialize(nlohmann::json& source) const
 {
     auto location = NodeLocation::empty();
     location.has_file = source["has_file"];
@@ -124,12 +124,12 @@ InstancedNode Serializer::deserialize(nlohmann::json& source) const
         ? m_project.get_node(location)
         : nullptr;
 
-    auto children = std::vector<InstancedNode>{};
+    auto children = std::vector<std::unique_ptr<InstancedNode>>{};
     for (auto& child : source["children"]) {
-        children.push_back(deserialize<InstancedNode>(child));
+        children.push_back(deserialize<std::unique_ptr<InstancedNode>>(child));
     }
 
-    return InstancedNode{
+    return std::unique_ptr<InstancedNode>(new InstancedNode{
         .transform = Transform{
             .position = deserialize<glm::vec3>(source["position"]),
             .orientation = deserialize<glm::quat>(source["orientation"]),
@@ -137,9 +137,9 @@ InstancedNode Serializer::deserialize(nlohmann::json& source) const
         },
         .node = node,
         .model_matrix = glm::mat4{},
-        .children = children,
+        .children = std::move(children),
         .name = source["name"],
-    };
+    });
 }
 
 template <>

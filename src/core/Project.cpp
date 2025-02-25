@@ -406,9 +406,9 @@ void Project::store()
 {
     auto serializer = Serializer{*this};
 
-    if (scene.has_value()) {
+    if (scene) {
         auto scene_file = std::ofstream{root / "scene.json"};
-        serializer.serialize(scene.value(), scene_file);
+        serializer.serialize(*scene, scene_file);
     }
 
     {

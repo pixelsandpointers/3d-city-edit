@@ -36,7 +36,7 @@ void Viewport::render(double delta_time)
         m_camera_controller.movement_speed = config.movement_speed;
         m_camera_controller.rotation_speed = config.rotation_speed;
         m_camera_controller.zoom_speed = config.zoom_speed;
-        m_camera_controller.camera->draw(config.viewing_mode, config.viewport_uniforms, m_framebuffer, project->scene.value());
+        m_camera_controller.camera->draw(config.viewing_mode, config.viewport_uniforms, m_framebuffer, *project->scene);
 
         config.camera_position = m_camera_controller.camera->position;
         config.camera_target = m_camera_controller.camera->target;

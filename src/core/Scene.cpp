@@ -32,18 +32,18 @@ Node Node::create(std::string name, Transform transform, NodeLocation location)
     };
 }
 
-InstancedNode Node::instantiate() const
+std::unique_ptr<InstancedNode> Node::instantiate() const
 {
-    InstancedNode new_node{
+    auto new_node = std::unique_ptr<InstancedNode>(new InstancedNode{
         .transform = transform,
         .node = this,
         .model_matrix = glm::mat4{},
         .children = {},
         .name = name,
-    };
+    });
 
     for (auto const& child : children) {
-        new_node.children.push_back(child.instantiate());
+        new_node->children.push_back(child.instantiate());
     }
 
     return new_node;
@@ -73,7 +73,7 @@ void InstancedNode::traverse(std::function<void(glm::mat4, Node const&)> f) cons
     }
 
     for (auto const& child : children) {
-        child.traverse(f);
+        child->traverse(f);
     }
 }
 
@@ -81,7 +81,7 @@ void InstancedNode::compute_transforms(glm::mat4 parent_transform)
 {
     model_matrix = parent_transform * transform.get_local_matrix();
     for (auto& child : children) {
-        child.compute_transforms(model_matrix);
+        child->compute_transforms(model_matrix);
     }
 }
 

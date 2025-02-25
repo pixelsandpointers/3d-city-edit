@@ -125,7 +125,7 @@ int main()
 
     auto scene = Node::create("scene", root_transform, NodeLocation::empty());
 
-    if (!project->scene.has_value()) {
+    if (!project->scene) {
         auto model_path = path / "Models/TUD_Innenstadt.FBX";
         auto obj = project->get_model(model_path);
 
@@ -138,7 +138,7 @@ int main()
         project->scene = scene.instantiate();
     }
 
-    if (!project->scene.has_value()) {
+    if (!project->scene) {
         std::abort();
     }
 
