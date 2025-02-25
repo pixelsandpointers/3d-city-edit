@@ -7,6 +7,17 @@ constexpr auto imgui_treenode_leaf_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNo
 
 ObjectSelectionTree::ObjectSelectionTree() = default;
 
+std::unique_ptr<InstancedNode> instantiate_and_rename_node(Node const& node)
+{
+    auto new_node = node.instantiate();
+    // Ugly hack to rename only the root node to the model filename
+    if (node.location.has_file && node.location.node_path == "/" + node.name) {
+        new_node->name = node.location.file_path.filename().string();
+    }
+
+    return new_node;
+}
+
 void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
 {
     auto* project = Project::get_current();
@@ -42,7 +53,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
         if (ImGui::BeginDragDropTarget()) {
             if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                 auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
-                child->children.push_back(node_to_instantiate->instantiate());
+                child->children.push_back(instantiate_and_rename_node(*node_to_instantiate));
                 project->scene->compute_transforms();
             }
             ImGui::EndDragDropTarget();
@@ -60,7 +71,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
                 // Drop node between TreeNodes -> instantiate as sibling
                 if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                     auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
-                    child_it = root.children.insert(child_it, node_to_instantiate->instantiate());
+                    child_it = root.children.insert(child_it, instantiate_and_rename_node(*node_to_instantiate));
                     project->scene->compute_transforms();
                 }
 
