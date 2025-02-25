@@ -16,7 +16,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install libglfw3-dev libassimp-dev
+          # Dependencies for glfw
+          sudo apt install libgl-dev libglvnd-dev libegl1-mesa-dev libvulkan-dev libwayland-dev libx11-dev libxrandr-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+          # Other dependencies
+          sudo apt install libassimp-dev
 
       - name: Configure CMake to build compilation database
         run: cmake -B "${{github.workspace}}/build" -D CMAKE_BUILD_TYPE=Release -G 'Unix Makefiles'
