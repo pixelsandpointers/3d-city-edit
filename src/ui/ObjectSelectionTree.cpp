@@ -18,7 +18,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
         ImGui::TableNextColumn();
         bool open = false;
 
-        auto is_selected = &child == project->selected_node;
+        auto is_selected = child.get() == project->selected_node;
 
         if (ImGui::IsWindowFocused() && is_selected && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
             child_it = root.children.erase(child_it) - 1;
@@ -30,9 +30,9 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             ? ImGuiTreeNodeFlags_Selected
             : ImGuiTreeNodeFlags_None;
 
-        auto const treenode_label = child.name + "##node_" + std::to_string(m_imgui_treenode_id++);
+        auto const treenode_label = child->name + "##node_" + std::to_string(m_imgui_treenode_id++);
 
-        if (!child.children.empty()) {
+        if (!child->children.empty()) {
             open = ImGui::TreeNodeEx(treenode_label.c_str(), flags_selected);
         } else {
             ImGui::TreeNodeEx(treenode_label.c_str(), imgui_treenode_leaf_flags | flags_selected);
@@ -42,7 +42,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
         if (ImGui::BeginDragDropTarget()) {
             if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                 auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
-                child.children.push_back(node_to_instantiate->instantiate());
+                child->children.push_back(node_to_instantiate->instantiate());
                 project->scene->compute_transforms();
             }
             ImGui::EndDragDropTarget();
@@ -70,11 +70,11 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
         m_prev_rect = current_rect;
 
         if (ImGui::IsItemClicked()) {
-            project->selected_node = &child;
+            project->selected_node = child.get();
         }
 
         if (open) {
-            traverse_nodes(child);
+            traverse_nodes(*child);
             ImGui::TreePop();
         }
     }
@@ -83,11 +83,11 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
 void ObjectSelectionTree::render()
 {
     if (ImGui::Begin("Object Tree")) {
-        if (auto& scene = Project::get_current()->scene; scene.has_value()) {
+        if (auto& scene = Project::get_current()->scene; scene) {
             if (ImGui::BeginTable("table0", 1)) {
                 m_prev_rect = {};
                 m_imgui_treenode_id = 0;
-                traverse_nodes(scene.value());
+                traverse_nodes(*scene);
             }
             ImGui::EndTable();
         } else {

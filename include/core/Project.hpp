@@ -32,7 +32,7 @@ class Project {
 public:
     std::filesystem::path root;
     InstancedNode* selected_node{nullptr};
-    std::optional<InstancedNode> scene;
+    std::unique_ptr<InstancedNode> scene;
     Config config;
 
     static Project* get_current();

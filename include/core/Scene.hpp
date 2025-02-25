@@ -30,7 +30,7 @@ struct InstancedNode {
     Node const* node;
 
     glm::mat4 model_matrix{0.0f};
-    std::vector<InstancedNode> children;
+    std::vector<std::unique_ptr<InstancedNode>> children;
     std::string name;
 
     void traverse(std::function<void(glm::mat4, Node const&)>) const;
@@ -54,6 +54,6 @@ struct Node {
     NodeLocation location;
 
     static Node create(std::string name, Transform transform, NodeLocation location);
-    [[nodiscard]] InstancedNode instantiate() const;
+    [[nodiscard]] std::unique_ptr<InstancedNode> instantiate() const;
     [[nodiscard]] bool is_fully_loaded() const;
 };

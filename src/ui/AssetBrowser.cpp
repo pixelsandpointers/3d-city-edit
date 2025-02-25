@@ -221,9 +221,9 @@ void AssetBrowser::render_model_preview()
     };
 
     auto instance = selected_node->instantiate();
-    instance.compute_transforms();
+    instance->compute_transforms();
 
-    instance.traverse([&](glm::mat4 transform_matrix, Node const& node) {
+    instance->traverse([&](glm::mat4 transform_matrix, Node const& node) {
         for (auto const& mesh : node.meshes) {
             aabb = aabb.merge(AABB{
                 .min = transform_matrix * glm::vec4{mesh.aabb.min, 1.0f},
@@ -242,7 +242,7 @@ void AssetBrowser::render_model_preview()
     m_model_preview_camera.far = 100000.0f;
     m_model_preview_camera.position = aabb.max - camera_offset;
     m_model_preview_camera.target = aabb.min;
-    m_model_preview_camera.draw(ViewingMode::RENDERED, m_model_preview_uniforms, m_model_preview_framebuffer, instance);
+    m_model_preview_camera.draw(ViewingMode::RENDERED, m_model_preview_uniforms, m_model_preview_framebuffer, *instance);
 }
 
 bool AssetBrowser::is_selected_item_equal(NodeVariantType to_compare)
