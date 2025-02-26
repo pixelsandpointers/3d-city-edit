@@ -92,7 +92,6 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float fov)
 {
 }
 
-// add viewing type => lid, wireframe, etc
 void Camera::draw(ViewingMode mode,
     Uniforms const& uniforms,
     Framebuffer const& framebuffer,
@@ -128,51 +127,57 @@ void Camera::draw(ViewingMode mode,
         }
     });
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& node)
+{
+    glm::mat4 projection = glm::perspective(fov, framebuffer.aspect, near, far);
+    auto view = glm::lookAt(position, target, up);
+
     auto project = Project::get_current();
-    if (project->selected_node) {
-        if (framebuffer.width != m_mask_framebuffer.width || framebuffer.height != m_mask_framebuffer.height) {
-            m_mask_framebuffer.resize(framebuffer.width, framebuffer.height);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, m_mask_framebuffer.id);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // render selected node in white to m_mask_framebuffer (albedo shader with outline color texture)
-        Shader::albedo.use();
-        Shader::albedo.set_mat4("projection", projection);
-        Shader::albedo.set_mat4("view", view);
-        Shader::albedo.set_float("gamma", 1.0f);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, project->white_texture()->m_id);
-        Shader::albedo.set_int("texture_diffuse", 0);
-
-        project->selected_node->traverse([&](auto transform_matrix, auto const& node_data) {
-            for (auto const& mesh : node_data.meshes) {
-                Shader::albedo.set_mat4("model", transform_matrix);
-                mesh.draw();
-            }
-        });
-
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        Shader::post_process_outline.use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_mask_framebuffer.color_texture);
-
-        Shader::post_process_outline.set_int("tex", 0);
-        Shader::post_process_outline.set_vec3("color", glm::vec3{0.84f, 0.5f, 0.1f});
-
-        draw_quad();
-
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDisable(GL_BLEND);
+    if (framebuffer.width != m_mask_framebuffer.width || framebuffer.height != m_mask_framebuffer.height) {
+        m_mask_framebuffer.resize(framebuffer.width, framebuffer.height);
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_mask_framebuffer.id);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // render selected node in white to m_mask_framebuffer (albedo shader with outline color texture)
+    Shader::albedo.use();
+    Shader::albedo.set_mat4("projection", projection);
+    Shader::albedo.set_mat4("view", view);
+    Shader::albedo.set_float("gamma", 1.0f);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, project->white_texture()->m_id);
+    Shader::albedo.set_int("texture_diffuse", 0);
+
+    node.traverse([&](auto transform_matrix, auto const& node_data) {
+        for (auto const& mesh : node_data.meshes) {
+            Shader::albedo.set_mat4("model", transform_matrix);
+            mesh.draw();
+        }
+    });
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    Shader::post_process_outline.use();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_mask_framebuffer.color_texture);
+
+    Shader::post_process_outline.set_int("tex", 0);
+    Shader::post_process_outline.set_vec3("color", glm::vec3{0.84f, 0.5f, 0.1f});
+
+    draw_quad();
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

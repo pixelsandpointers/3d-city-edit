@@ -52,10 +52,10 @@ public:
     // constructor with vectors
     Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f));
 
-    void draw(ViewingMode,
-        Uniforms const&,
-        Framebuffer const&,
-        InstancedNode const&);
+    void draw(ViewingMode, Uniforms const&, Framebuffer const&, InstancedNode const&);
+
+    // The `draw` function must be called before `draw_outline`.
+    void draw_outline(Framebuffer const&, InstancedNode const&);
 
 private:
     Framebuffer m_mask_framebuffer{Framebuffer::create_simple(1, 1)};
