@@ -1,6 +1,7 @@
 #include "ui/Viewport.hpp"
 
 #include "core/Project.hpp"
+#include "renderer/Picking.hpp"
 #include <imgui_internal.h>
 
 Viewport::Viewport()
@@ -46,6 +47,15 @@ void Viewport::render(double delta_time)
         config.camera_target = m_camera_controller.camera->target;
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            auto const mouse_pos = ImGui::GetMousePos();
+            auto const window_pos = ImGui::GetWindowPos();
+            auto const window_size = ImGui::GetWindowSize();
+            auto const relative_pos = glm::vec2{mouse_pos.x - window_pos.x, mouse_pos.y - window_pos.y};
+
+            select_object(m_camera_controller.camera.get(), *Project::get_current()->scene, glm::vec2{window_size.x, window_size.y}, relative_pos);
+        }
     }
 
     // Focus Viewport window not only with the left, but also the middle and right mouse button.

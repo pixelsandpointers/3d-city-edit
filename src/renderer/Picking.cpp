@@ -1,17 +1,11 @@
 #include "renderer/Picking.hpp"
-#include "imgui.h"
 #include <iostream>
 
-void select_object(Camera* camera, InstancedNode const& scene_root)
+void select_object(Camera* camera, InstancedNode const& scene_root, glm::vec2 window_size, glm::vec2 cursor_pos)
 {
-    auto cursor_pos = ImGui::GetCursorScreenPos();
-    auto mouse_x = cursor_pos.x;
-    auto mouse_y = cursor_pos.y;
-
     // Convert screen coordinates to Normalized Device Coordinates (NDC)
-    auto window_size = ImGui::GetContentRegionAvail();
-    float ndc_x = (2.0f * mouse_x) / window_size.x - 1.0f;
-    float ndc_y = 1.0f - (2.0f * mouse_y) / window_size.y;
+    float ndc_x = (2.0f * cursor_pos.x) / window_size.x - 1.0f;
+    float ndc_y = 1.0f - (2.0f * cursor_pos.y) / window_size.y;
 
     glm::vec4 ray_clip(ndc_x, ndc_y, -1.0f, 1.0f);
 
@@ -34,13 +28,12 @@ void select_object(Camera* camera, InstancedNode const& scene_root)
     float closest_distance = std::numeric_limits<float>::max();
     Node* closest_object = nullptr;
 
+    // TODO: Add some function `InstancedNode::traverse_instances` that can get `InstancedNode&`
     scene_root.traverse([&](glm::mat4 world_transform, Node const& node) {
-        if (test_intersection(camera->position, ray_world, node, world_transform)) {
-            float distance = glm::distance(camera->position, glm::vec3(world_transform * glm::vec4(node.transform.position, 1.0f)));
-            if (distance < closest_distance) {
-                closest_distance = distance;
-                closest_object = const_cast<Node*>(&node);
-            }
+        auto distance = test_intersection(camera->position, ray_world, node, world_transform);
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            closest_object = const_cast<Node*>(&node);
         }
     });
 
@@ -50,33 +43,41 @@ void select_object(Camera* camera, InstancedNode const& scene_root)
         // Additional actions like highlighting or UI updates can be performed here
     }
 }
-bool test_intersection(glm::vec3 const& ray_origin, glm::vec3 const& ray_dir, Node const& object, glm::mat4 const& world_transform)
+
+float test_intersection(glm::vec3 const& ray_origin, glm::vec3 const& ray_dir, Node const& object, glm::mat4 const& world_transform)
 {
     // Compute inverse ray direction for AABB intersection
     glm::vec3 inv_dir = 1.0f / ray_dir;
-    float tmin = std::numeric_limits<float>::lowest();
-    float tmax = std::numeric_limits<float>::max();
+
+    auto min_distance = std::numeric_limits<float>::max();
 
     // Loop through meshes in the Node
     for (auto const& mesh : object.meshes) {
-        glm::vec3 const& min_bound = glm::vec3(world_transform * glm::vec4(mesh.aabb.min, 1));
-        glm::vec3 const& max_bound = glm::vec3(world_transform * glm::vec4(mesh.aabb.max, 1));
+        auto min_bound = glm::vec3(world_transform * glm::vec4(mesh.aabb.min, 1));
+        auto max_bound = glm::vec3(world_transform * glm::vec4(mesh.aabb.max, 1));
+        auto tmin = std::numeric_limits<float>::lowest();
+        auto tmax = std::numeric_limits<float>::max();
+
+        bool intersects = true;
 
         // Perform intersection tests for each axis
         for (int i = 0; i < 3; ++i) {
             float t1 = (min_bound[i] - ray_origin[i]) * inv_dir[i];
             float t2 = (max_bound[i] - ray_origin[i]) * inv_dir[i];
 
-            if (inv_dir[i] < 0.0f)
-                std::swap(t1, t2);
-
-            tmin = glm::max(tmin, t1);
-            tmax = glm::min(tmax, t2);
+            // This works, but also detects backwards matches
+            tmin = std::max(tmin, std::min(t1, t2));
+            tmax = std::min(tmax, std::max(t1, t2));
 
             if (tmin > tmax) {
-                return false; // Exit early if no intersection possible
+                intersects = false;
+                break;
             }
         }
+
+        if (intersects && tmin > 0.0f && tmin < min_distance) {
+            min_distance = tmin;
+        }
     }
-    return true;
+    return min_distance;
 }
