@@ -8,6 +8,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 struct Framebuffer {
+    enum class Preset {
+        RGB_UNSIGNED_INTEGRAL_NORMALIZED,
+        R_FLOAT,
+    };
+
     unsigned int id;
     unsigned int color_texture;
     unsigned int depth_rbo;
@@ -16,7 +21,7 @@ struct Framebuffer {
     float aspect;
 
     static Framebuffer get_default(int width, int height);
-    static Framebuffer create_simple(int width, int height);
+    static Framebuffer create_simple(int width, int height, Preset preset = Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED);
 
     Framebuffer() = default;
     Framebuffer(Framebuffer&) = delete;
@@ -25,6 +30,10 @@ struct Framebuffer {
     void resize(int width, int height);
 
 private:
+    GLenum m_internal_format;
+    GLenum m_format;
+    GLenum m_type;
+
     // This is ugly and shouldn't be necessary...
     // Why is the definition of an Aggregate so strange?
     Framebuffer(unsigned int id, unsigned int color_texture, unsigned int depth_rbo, int width, int height, float aspect)

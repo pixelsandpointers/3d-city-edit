@@ -17,16 +17,29 @@ Framebuffer Framebuffer::get_default(int width, int height)
     };
 }
 
-Framebuffer Framebuffer::create_simple(int width, int height)
+Framebuffer Framebuffer::create_simple(int width, int height, Preset preset)
 {
     auto fb = Framebuffer::get_default(width, height);
+
+    switch (preset) {
+    case Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED:
+        fb.m_internal_format = GL_RGB;
+        fb.m_format = GL_RGB;
+        fb.m_type = GL_UNSIGNED_BYTE;
+        break;
+    case Preset::R_FLOAT:
+        fb.m_internal_format = GL_R32F;
+        fb.m_format = GL_RED;
+        fb.m_type = GL_FLOAT;
+        break;
+    }
 
     glGenFramebuffers(1, &fb.id);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.id);
 
     glGenTextures(1, &fb.color_texture);
     glBindTexture(GL_TEXTURE_2D, fb.color_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fb.width, fb.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, fb.m_internal_format, fb.width, fb.height, 0, fb.m_format, fb.m_type, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -76,7 +89,7 @@ void Framebuffer::resize(int w, int h)
 
     if (color_texture) {
         glBindTexture(GL_TEXTURE_2D, color_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, m_internal_format, width, height, 0, m_format, m_type, NULL);
     }
 
     if (depth_rbo) {
