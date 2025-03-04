@@ -2,6 +2,7 @@
 
 #include "core/CameraController.hpp"
 #include "renderer/Camera.hpp"
+#include "renderer/Picking.hpp"
 #include <imgui.h>
 
 struct Viewport {
@@ -12,4 +13,5 @@ struct Viewport {
 private:
     Framebuffer m_framebuffer;
     CameraController m_camera_controller;
+    Picking m_picker;
 };

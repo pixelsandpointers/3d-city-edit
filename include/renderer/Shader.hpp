@@ -116,6 +116,7 @@ public:
     static Shader lighting;
     static Shader albedo;
     static Shader post_process_outline;
+    static Shader picking;
     static Shader const& get_shader_for_mode(ViewingMode);
     static void init();
 
@@ -130,6 +131,7 @@ public:
     void use() const;
     void set_bool(char const* name, bool value) const;
     void set_int(char const* name, int value) const;
+    void set_uint(char const* name, unsigned int value) const;
     void set_float(char const* name, float value) const;
     void set_mat2(char const* name, glm::mat2 const& matrix) const;
     void set_mat3(char const* name, glm::mat3 const& matrix) const;
