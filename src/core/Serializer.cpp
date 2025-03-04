@@ -87,6 +87,7 @@ nlohmann::json Serializer::serialize(Config const& source) const
     target["viewport_uniforms"] = serialize(source.viewport_uniforms);
     target["draw_wireframe"] = source.draw_wireframe;
     target["fallback_color"] = serialize(source.fallback_color);
+    target["fov"] = source.fov;
     target["camera_controller_type"] = source.camera_controller_type;
     target["movement_speed"] = source.movement_speed;
     target["rotation_speed"] = source.rotation_speed;
@@ -168,6 +169,7 @@ Config Serializer::deserialize(nlohmann::json& source) const
         .viewport_uniforms = deserialize<Uniforms>(source["viewport_uniforms"]),
         .draw_wireframe = source["draw_wireframe"],
         .fallback_color = deserialize<glm::vec3>(source["fallback_color"]),
+        .fov = source["fov"],
         .camera_controller_type = source["camera_controller_type"],
         .movement_speed = source["movement_speed"],
         .rotation_speed = source["rotation_speed"],

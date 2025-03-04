@@ -9,6 +9,7 @@ struct Config {
     Uniforms viewport_uniforms;
     bool draw_wireframe = false;
     glm::vec3 fallback_color{255, 255, 255};
+    float fov{glm::radians(90.0f)}; // Vertical fov in radians
 
     // camera
     CameraController::Type camera_controller_type{CameraController::Type::UNITY};

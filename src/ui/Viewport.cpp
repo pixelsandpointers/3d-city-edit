@@ -33,6 +33,7 @@ void Viewport::render(double delta_time)
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
+        m_camera_controller.camera->fov = config.fov;
         m_camera_controller.type = config.camera_controller_type;
         m_camera_controller.movement_speed = config.movement_speed;
         m_camera_controller.rotation_speed = config.rotation_speed;

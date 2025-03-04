@@ -31,6 +31,11 @@ void SettingsPane::render()
         // Wireframe button
         ImGui::Checkbox("Draw wireframe", &config.draw_wireframe);
 
+        auto fov_degrees = glm::degrees(config.fov);
+        if (ImGui::SliderFloat("FOV", &fov_degrees, 10.0f, 170.0f)) {
+            config.fov = glm::radians(fov_degrees);
+        }
+
         // Lighting Controls
         ImGui::SeparatorText("Lighting Controls");
         ImGui::SliderFloat("Ambient Light Strength", &config.viewport_uniforms.ambient_strength, 0.0f, 1.0f);
