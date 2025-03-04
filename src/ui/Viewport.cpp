@@ -46,6 +46,16 @@ void Viewport::render(double delta_time)
         config.camera_target = m_camera_controller.camera->target;
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            auto const mouse_pos = ImGui::GetMousePos();
+            auto const window_pos = ImGui::GetWindowPos();
+            // Some awful workaround for not being able to get the position of the `ImGui::Image` directly. At least I have no clue how to do that.
+            // The 19 pixels are for the window titlebar.
+            auto const relative_pos = glm::vec2{mouse_pos.x - window_pos.x, m_framebuffer.height - mouse_pos.y - window_pos.y + 19};
+
+            project->selected_node = m_picker.get_selected_node(*m_camera_controller.camera, *project->scene, relative_pos, glm::vec2{m_framebuffer.width, m_framebuffer.height});
+        }
     }
 
     // Focus Viewport window not only with the left, but also the middle and right mouse button.

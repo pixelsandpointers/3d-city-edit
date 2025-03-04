@@ -178,9 +178,41 @@ auto const post_process_outline_source = ShaderSource{
     )",
 };
 
+auto const picking_source = ShaderSource{
+    .vertex_shader = R"(
+        #version 410 core
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec3 aNormal;
+        layout (location = 2) in vec2 aTexCoords;
+
+        out vec2 TexCoords;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        void main() {
+            TexCoords = aTexCoords;
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+        })",
+
+    .fragment_shader = R"(
+        #version 410 core
+        out vec4 FragColor;
+        in vec2 TexCoords;
+        in vec4 gl_FragCoord;
+
+        uniform uint id;
+
+        void main() {
+            FragColor.r = id;
+        })",
+};
+
 Shader Shader::lighting;
 Shader Shader::albedo;
 Shader Shader::post_process_outline;
+Shader Shader::picking;
 
 void Shader::init()
 {
@@ -188,6 +220,7 @@ void Shader::init()
     Shader::lighting = Shader{lighting_source};
     Shader::albedo = Shader{albedo_source};
     Shader::post_process_outline = Shader{post_process_outline_source};
+    Shader::picking = Shader{picking_source};
 }
 
 Shader const& Shader::get_shader_for_mode(ViewingMode mode)
@@ -291,6 +324,11 @@ void Shader::set_bool(char const* name, bool value) const
 void Shader::set_int(char const* name, int value) const
 {
     glUniform1i(glGetUniformLocation(m_id, name), value);
+}
+
+void Shader::set_uint(char const* name, unsigned int value) const
+{
+    glUniform1ui(glGetUniformLocation(m_id, name), value);
 }
 
 void Shader::set_float(char const* name, float value) const
