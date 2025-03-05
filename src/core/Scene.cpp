@@ -85,6 +85,21 @@ void InstancedNode::compute_transforms(glm::mat4 parent_transform)
     }
 }
 
+InstancedNode* InstancedNode::find_parent(InstancedNode& scene) const
+{
+    for (auto& child : scene.children) {
+        if (child.get() == this) {
+            return &scene;
+        }
+
+        if (auto parent = find_parent(*child)) {
+            return parent;
+        }
+    }
+
+    return nullptr;
+}
+
 NodeLocation NodeLocation::empty()
 {
     return NodeLocation{

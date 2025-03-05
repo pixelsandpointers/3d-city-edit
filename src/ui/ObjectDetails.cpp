@@ -8,6 +8,45 @@
 
 ObjectDetails::ObjectDetails() = default;
 
+InstancedNode* reset_instance_full(InstancedNode* node)
+{
+    auto project = Project::get_current();
+    auto base_node = node->node;
+    auto parent = node->find_parent(*project->scene);
+
+    if (!base_node || !parent) {
+        return node;
+    }
+
+    auto& children = parent->children;
+    auto position = std::find_if(children.begin(), children.end(), [&](std::unique_ptr<InstancedNode> const& current) {
+        return current.get() == node;
+    });
+    if (position == children.end()) {
+        return node;
+    }
+
+    auto new_node = base_node->instantiate();
+    node = project->selected_node = new_node.get();
+    position = children.insert(position, std::move(new_node));
+    children.erase(position + 1);
+    project->scene->compute_transforms();
+
+    return node;
+}
+
+void reset_instance_transform(InstancedNode* node)
+{
+    auto project = Project::get_current();
+    auto base_node = node->node;
+    if (!base_node) {
+        return;
+    }
+
+    node->transform = base_node->transform;
+    project->scene->compute_transforms();
+}
+
 char object_label[128] = {""};
 
 void ObjectDetails::render()
@@ -69,6 +108,23 @@ void ObjectDetails::render()
             ImGui::PopItemWidth();
             if (i < 2)
                 ImGui::SameLine();
+        }
+
+        // Misc
+        if (ImGui::BeginPopup("reset_mode")) {
+            if (ImGui::Button("transform only")) {
+                reset_instance_transform(node);
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::Button("transform and children")) {
+                node = reset_instance_full(node);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        if (ImGui::Button("Reset")) {
+            ImGui::OpenPopup("reset_mode");
         }
     }
 
