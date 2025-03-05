@@ -70,11 +70,24 @@ void Viewport::render(double delta_time)
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, m_framebuffer.width, m_framebuffer.height);
 
         if (project->selected_node) {
+            ImGuizmo::OPERATION operation;
+            switch (gizmo_operation) {
+            case GizmoOperation::TRANSLATE:
+                operation = ImGuizmo::TRANSLATE;
+                break;
+            case GizmoOperation::ROTATE:
+                operation = ImGuizmo::ROTATE;
+                break;
+            case GizmoOperation::SCALE:
+                operation = ImGuizmo::SCALE;
+                break;
+            }
+
             auto const view = m_camera_controller.camera->view();
             auto const projection = m_camera_controller.camera->projection(m_framebuffer.aspect);
             auto model_matrix = project->selected_node->model_matrix;
             auto delta_matrix = glm::mat4{1.0f};
-            if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), ImGuizmo::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(model_matrix), glm::value_ptr(delta_matrix))) {
+            if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), operation, ImGuizmo::WORLD, glm::value_ptr(model_matrix), glm::value_ptr(delta_matrix))) {
                 auto& transform = project->selected_node->transform;
                 glm::vec3 delta_scale;
                 glm::quat delta_orientation;
@@ -82,7 +95,17 @@ void Viewport::render(double delta_time)
                 glm::vec3 delta_skew_unused;
                 glm::vec4 delta_projection_unused;
                 glm::decompose(delta_matrix, delta_scale, delta_orientation, delta_position, delta_skew_unused, delta_projection_unused);
-                transform.position += delta_position;
+                switch (gizmo_operation) {
+                case GizmoOperation::TRANSLATE:
+                    transform.position += delta_position;
+                    break;
+                case GizmoOperation::ROTATE:
+                    transform.orientation = glm::normalize(delta_orientation) * transform.orientation;
+                    break;
+                case GizmoOperation::SCALE:
+                    transform.scale *= delta_scale;
+                    break;
+                }
                 project->scene->compute_transforms();
             }
         }
