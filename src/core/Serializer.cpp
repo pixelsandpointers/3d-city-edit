@@ -94,6 +94,10 @@ nlohmann::json Serializer::serialize(Config const& source) const
     target["zoom_speed"] = source.zoom_speed;
     target["camera_position"] = serialize(source.camera_position);
     target["camera_target"] = serialize(source.camera_target);
+    target["gizmo_use_snap"] = source.gizmo_use_snap;
+    target["gizmo_snap_translation"] = source.gizmo_snap_translation;
+    target["gizmo_snap_rotation"] = source.gizmo_snap_rotation;
+    target["gizmo_snap_scale"] = source.gizmo_snap_scale;
     return target;
 }
 
@@ -176,6 +180,10 @@ Config Serializer::deserialize(nlohmann::json& source) const
         .zoom_speed = source["zoom_speed"],
         .camera_position = deserialize<glm::vec3>(source["camera_position"]),
         .camera_target = deserialize<glm::vec3>(source["camera_target"]),
+        .gizmo_use_snap = source["gizmo_use_snap"],
+        .gizmo_snap_translation = source["gizmo_snap_translation"],
+        .gizmo_snap_rotation = source["gizmo_snap_rotation"],
+        .gizmo_snap_scale = source["gizmo_snap_scale"],
     };
 }
 
