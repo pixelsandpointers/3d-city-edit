@@ -105,6 +105,16 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float fov)
 {
 }
 
+glm::mat4 Camera::view() const
+{
+    return glm::lookAt(position, target, up);
+}
+
+glm::mat4 Camera::projection(float aspect) const
+{
+    return glm::perspective(fov, aspect, near, far);
+}
+
 void Camera::draw(ViewingMode mode,
     Uniforms const& uniforms,
     Framebuffer const& framebuffer,
@@ -118,12 +128,9 @@ void Camera::draw(ViewingMode mode,
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, framebuffer.width, framebuffer.height);
 
-    glm::mat4 projection = glm::perspective(fov, framebuffer.aspect, near, far);
-    auto view = glm::lookAt(position, target, up);
-
     // view/projection transformations
-    shader.set_mat4("projection", projection);
-    shader.set_mat4("view", view);
+    shader.set_mat4("projection", projection(framebuffer.aspect));
+    shader.set_mat4("view", view());
     shader.set_vec3("cameraPos", position);
     shader.set_float("ambientStrength", uniforms.ambient_strength);
     shader.set_float("specularityFactor", uniforms.specularity_factor);
@@ -145,9 +152,6 @@ void Camera::draw(ViewingMode mode,
 
 void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& node)
 {
-    glm::mat4 projection = glm::perspective(fov, framebuffer.aspect, near, far);
-    auto view = glm::lookAt(position, target, up);
-
     auto project = Project::get_current();
     if (framebuffer.width != m_mask_framebuffer.width || framebuffer.height != m_mask_framebuffer.height) {
         m_mask_framebuffer.resize(framebuffer.width, framebuffer.height);
@@ -158,8 +162,8 @@ void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& n
 
     // render selected node in white to m_mask_framebuffer (albedo shader with outline color texture)
     Shader::albedo.use();
-    Shader::albedo.set_mat4("projection", projection);
-    Shader::albedo.set_mat4("view", view);
+    Shader::albedo.set_mat4("projection", projection(framebuffer.aspect));
+    Shader::albedo.set_mat4("view", view());
     Shader::albedo.set_float("gamma", 1.0f);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, project->white_texture()->m_id);
