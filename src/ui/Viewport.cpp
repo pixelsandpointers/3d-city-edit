@@ -1,6 +1,7 @@
 #include "ui/Viewport.hpp"
 
 #include "core/Project.hpp"
+#include <map>
 
 // clang-format off
 #include <imgui.h>
@@ -16,6 +17,12 @@ Viewport::Viewport()
     , m_camera_controller{CameraController::Type::UNITY, glm::vec3{}}
 {
 }
+
+std::map<Viewport::GizmoOperation, char const*> const gizmo_operation_names{
+    {Viewport::GizmoOperation::TRANSLATE, "Translate"},
+    {Viewport::GizmoOperation::ROTATE, "Rotate"},
+    {Viewport::GizmoOperation::SCALE, "Scale"},
+};
 
 void Viewport::render(double delta_time)
 {
@@ -108,6 +115,22 @@ void Viewport::render(double delta_time)
                 }
                 project->scene->compute_transforms();
             }
+
+            auto const window_pos = ImGui::GetWindowPos();
+            ImGui::SetNextWindowPos(ImVec2{window_pos.x + 10, window_pos.y + 30});
+            ImGui::SetNextWindowSize(ImVec2{150, 40});
+            if (ImGui::BeginChild("gizmo_settings_window")) {
+                if (ImGui::BeginCombo("##gizmo_mode_combo", gizmo_operation_names.at(gizmo_operation))) {
+                    for (auto const& [operation, name] : gizmo_operation_names) {
+                        if (ImGui::Selectable(name, gizmo_operation == operation))
+                            gizmo_operation = operation;
+                        if (gizmo_operation == operation)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+            ImGui::EndChild();
         }
     }
 
