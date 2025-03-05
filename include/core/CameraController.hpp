@@ -23,10 +23,10 @@ struct CameraController {
 
     float zoom_speed{1.0f};
 
-    void update(float delta_time);
+    void update(float delta_time, bool handle_scroll);
 
 private:
-    void update_freecam(float delta_time);
-    void update_blender(float delta_time);
-    void update_unity(float delta_time);
+    void update_freecam(float delta_time, bool handle_scroll);
+    void update_blender(float delta_time, bool handle_scroll);
+    void update_unity(float delta_time, bool handle_scroll);
 };

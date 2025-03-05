@@ -20,7 +20,7 @@ void Viewport::render(double delta_time)
         m_camera_controller.camera->target = config.camera_target;
 
         if (ImGui::IsWindowFocused()) {
-            m_camera_controller.update(delta_time);
+            m_camera_controller.update(delta_time, ImGui::IsWindowHovered());
         }
 
         auto size = ImGui::GetContentRegionAvail();
