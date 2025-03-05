@@ -10,17 +10,17 @@ CameraController::CameraController(Type type, glm::vec3 camera_position)
     camera = std::make_unique<Camera>(camera_position, camera_position + direction);
 }
 
-void CameraController::update(float delta_time)
+void CameraController::update(float delta_time, bool handle_scroll)
 {
     switch (type) {
     case Type::FREECAM:
-        update_freecam(delta_time);
+        update_freecam(delta_time, handle_scroll);
         break;
     case Type::BLENDER:
-        update_blender(delta_time);
+        update_blender(delta_time, handle_scroll);
         break;
     case Type::UNITY:
-        update_unity(delta_time);
+        update_unity(delta_time, handle_scroll);
         break;
     }
 }
@@ -42,7 +42,7 @@ glm::vec3 yaw_pitch_to_direction(float yaw, float pitch)
     };
 }
 
-void CameraController::update_freecam(float delta_time)
+void CameraController::update_freecam(float delta_time, bool)
 {
     auto forward = glm::normalize(camera->target - camera->position);
     auto right = glm::normalize(glm::cross(forward, camera->up));
@@ -86,7 +86,7 @@ void CameraController::update_freecam(float delta_time)
 }
 
 // Turntable orbit (y axis keeps pointing up) with blender controls
-void CameraController::update_blender(float delta_time)
+void CameraController::update_blender(float delta_time, bool handle_scroll)
 {
     // As viewed by the target torwards the camera
     auto forward = camera->position - camera->target;
@@ -121,7 +121,7 @@ void CameraController::update_blender(float delta_time)
 
     // Zoom
     auto scroll_y = static_cast<float>(Input::scroll_delta().y);
-    if (scroll_y != 0.0) {
+    if (handle_scroll && scroll_y != 0.0) {
         auto zoom_step = zoom_speed * std::sqrt(glm::length(forward)) * -scroll_y;
         auto min_distance = 1.0f;
         auto camera_distance = std::abs(glm::distance(camera->position, camera->target));
@@ -132,7 +132,7 @@ void CameraController::update_blender(float delta_time)
     }
 }
 
-void CameraController::update_unity(float delta_time)
+void CameraController::update_unity(float delta_time, bool handle_scroll)
 {
     // As viewed by the target torwards the camera
     auto forward = glm::normalize(camera->target - camera->position);
@@ -183,8 +183,10 @@ void CameraController::update_unity(float delta_time)
 
     // Zoom
     auto scroll_y = static_cast<float>(Input::scroll_delta().y);
-    // FIXME: I have no clue how zooming works in Unity
-    camera->position += forward * scroll_y * zoom_speed * 20.0f;
+    if (handle_scroll && scroll_y != 0.0) {
+        // FIXME: I have no clue how zooming works in Unity
+        camera->position += forward * scroll_y * zoom_speed * 20.0f;
+    }
 
     camera->target = camera->position + yaw_pitch_to_direction(yaw, pitch);
 }
