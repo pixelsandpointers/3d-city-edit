@@ -35,6 +35,9 @@ struct InstancedNode {
 
     void traverse(std::function<void(glm::mat4, Node const&)>) const;
     void compute_transforms(glm::mat4 = glm::mat4{1.0f});
+
+    // This function is slow and should only be sparingly used and only when absolutely necessary.
+    [[nodiscard]] InstancedNode* find_parent(InstancedNode& scene) const;
 };
 
 struct NodeLocation {
