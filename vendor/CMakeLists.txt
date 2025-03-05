@@ -55,6 +55,23 @@ else()
     target_link_libraries(3d imgui)
 endif()
 
+find_package(imguizmo CONFIG)
+if (imguizmo_FOUND)
+    target_link_libraries(3d imguizmo::imguizmo)
+else()
+    FetchContent_Declare(
+        imguizmo
+        GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo
+        GIT_TAG b10e91756d32395f5c1fefd417899b657ed7cb88
+    )
+    FetchContent_MakeAvailable(imguizmo)
+
+    add_library(imguizmo INTERFACE)
+    target_include_directories(imguizmo INTERFACE "${imguizmo_SOURCE_DIR}")
+    target_sources(imguizmo INTERFACE "${imguizmo_SOURCE_DIR}/ImGuizmo.cpp")
+    target_link_libraries(3d imguizmo)
+endif()
+
 add_library(stb stb_image.cpp)
 target_include_directories(stb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(3d stb)
