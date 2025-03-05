@@ -70,6 +70,6 @@ void SettingsPane::render()
         ImGui::SeparatorText("Textures");
 
         ImGui::ColorEdit3("Fallback Texture Color", &config.fallback_color[0]);
-        ImGui::End();
     }
+    ImGui::End();
 }

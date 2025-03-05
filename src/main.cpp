@@ -32,26 +32,21 @@ void glfw_window_size_callback(GLFWwindow*, int width, int height)
 
 void setup_dock_builder()
 {
-    int const dockspace = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+    auto dockspace = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
     static bool first_time = true;
 
     if (first_time) {
         first_time = false;
 
-        ImGuiID dockspace_left_20, dockspace_right_80, dockspace_right_20, content_main, content_left_top, content_left_bottom, content_right_top, content_right_bottom;
+        auto dockspace_left = ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.2f, nullptr, &dockspace);
+        auto dockspace_right = ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Right, 0.25f, nullptr, &dockspace);
+        auto dockspace_right_bottom = ImGui::DockBuilderSplitNode(dockspace_right, ImGuiDir_Down, 0.4f, nullptr, &dockspace_right);
 
-        // splitting the viewport into subnodes: left_20 is a partition into 20% left, 80% right
-        ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.2f, &dockspace_left_20, &dockspace_right_80);
-        ImGui::DockBuilderSplitNode(dockspace_left_20, ImGuiDir_Up, 0.7f, &content_left_top, &content_left_bottom);
-        ImGui::DockBuilderSplitNode(dockspace_right_80, ImGuiDir_Left, 0.75f, &content_main, &dockspace_right_20);
-        ImGui::DockBuilderSplitNode(dockspace_right_20, ImGuiDir_Up, 0.2f, &content_right_top, &content_right_bottom);
-
-        // docking components
-        ImGui::DockBuilderDockWindow("Asset Browser", content_left_top);
-        ImGui::DockBuilderDockWindow("Settings", content_left_bottom);
-        ImGui::DockBuilderDockWindow("Viewport", content_main);
-        ImGui::DockBuilderDockWindow("Object Details", content_right_top);
-        ImGui::DockBuilderDockWindow("Object Tree", content_right_bottom);
+        ImGui::DockBuilderDockWindow("Asset Browser", dockspace_left);
+        ImGui::DockBuilderDockWindow("Settings", dockspace_left);
+        ImGui::DockBuilderDockWindow("Viewport", dockspace);
+        ImGui::DockBuilderDockWindow("Object Tree", dockspace_right);
+        ImGui::DockBuilderDockWindow("Object Details", dockspace_right_bottom);
 
         ImGui::DockBuilderFinish(dockspace);
     }
@@ -177,8 +172,8 @@ int main()
 
         object_details_pane.render();
         object_selection_tree.render();
-        settings_pane.render();
         asset_browser.render();
+        settings_pane.render();
         viewport_window.render(delta_time);
 
         ImGui::Render();
