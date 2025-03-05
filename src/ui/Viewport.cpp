@@ -78,15 +78,19 @@ void Viewport::render(double delta_time)
 
         if (project->selected_node) {
             ImGuizmo::OPERATION operation;
+            glm::vec3 snap_size;
             switch (gizmo_operation) {
             case GizmoOperation::TRANSLATE:
                 operation = ImGuizmo::TRANSLATE;
+                snap_size = glm::vec3{config.gizmo_snap_translation};
                 break;
             case GizmoOperation::ROTATE:
                 operation = ImGuizmo::ROTATE;
+                snap_size = glm::vec3{config.gizmo_snap_rotation};
                 break;
             case GizmoOperation::SCALE:
                 operation = ImGuizmo::SCALE;
+                snap_size = glm::vec3{config.gizmo_snap_scale};
                 break;
             }
 
@@ -94,7 +98,7 @@ void Viewport::render(double delta_time)
             auto const projection = m_camera_controller.camera->projection(m_framebuffer.aspect);
             auto model_matrix = project->selected_node->model_matrix;
             auto delta_matrix = glm::mat4{1.0f};
-            if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), operation, ImGuizmo::WORLD, glm::value_ptr(model_matrix), glm::value_ptr(delta_matrix))) {
+            if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), operation, ImGuizmo::WORLD, glm::value_ptr(model_matrix), glm::value_ptr(delta_matrix), config.gizmo_use_snap ? glm::value_ptr(snap_size) : nullptr)) {
                 auto& transform = project->selected_node->transform;
                 glm::vec3 delta_scale;
                 glm::quat delta_orientation;
@@ -118,7 +122,7 @@ void Viewport::render(double delta_time)
 
             auto const window_pos = ImGui::GetWindowPos();
             ImGui::SetNextWindowPos(ImVec2{window_pos.x + 10, window_pos.y + 30});
-            ImGui::SetNextWindowSize(ImVec2{150, 40});
+            ImGui::SetNextWindowSize(ImVec2{200, 100});
             if (ImGui::BeginChild("gizmo_settings_window")) {
                 if (ImGui::BeginCombo("##gizmo_mode_combo", gizmo_operation_names.at(gizmo_operation))) {
                     for (auto const& [operation, name] : gizmo_operation_names) {
@@ -129,6 +133,30 @@ void Viewport::render(double delta_time)
                     }
                     ImGui::EndCombo();
                 }
+
+                ImGui::Checkbox("Use snapping", &config.gizmo_use_snap);
+
+                float* snap_size;
+                float step;
+                float fast_step;
+                switch (gizmo_operation) {
+                case GizmoOperation::TRANSLATE:
+                    snap_size = &config.gizmo_snap_translation;
+                    step = 10.0f;
+                    fast_step = 100.0f;
+                    break;
+                case GizmoOperation::ROTATE:
+                    snap_size = &config.gizmo_snap_rotation;
+                    step = 1.0f;
+                    fast_step = 10.0f;
+                    break;
+                case GizmoOperation::SCALE:
+                    snap_size = &config.gizmo_snap_scale;
+                    step = 0.1f;
+                    fast_step = 1.0f;
+                    break;
+                }
+                ImGui::InputFloat("snap size", snap_size, step, fast_step);
             }
             ImGui::EndChild();
         }

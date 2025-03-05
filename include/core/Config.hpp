@@ -20,4 +20,9 @@ struct Config {
     // FIXME: The CameraController breaks if position and target are equal
     glm::vec3 camera_position{0.0f};
     glm::vec3 camera_target{0.0f, 0.0f, -1.0f};
+
+    bool gizmo_use_snap{true};
+    float gizmo_snap_translation{100.0f};
+    float gizmo_snap_rotation{10.0f};
+    float gizmo_snap_scale{1.0f};
 };
