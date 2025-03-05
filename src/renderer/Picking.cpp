@@ -33,12 +33,9 @@ InstancedNode* Picking::get_selected_node(Camera const& camera, InstancedNode& s
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, m_framebuffer.width, m_framebuffer.height);
 
-    glm::mat4 projection = glm::perspective(camera.fov, m_framebuffer.aspect, camera.near, camera.far);
-    auto view = glm::lookAt(camera.position, camera.target, camera.up);
-
     // view/projection transformations
-    shader.set_mat4("projection", projection);
-    shader.set_mat4("view", view);
+    shader.set_mat4("projection", camera.projection(m_framebuffer.aspect));
+    shader.set_mat4("view", camera.view());
 
     uint32_t i = 1; // Treat 0 as error
     traverse_instances(scene, [&](auto transform_matrix, auto& instance) {

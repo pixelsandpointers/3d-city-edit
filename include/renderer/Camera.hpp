@@ -60,6 +60,8 @@ public:
 
     // constructor with vectors
     Camera(glm::vec3 position, glm::vec3 target, float fov = glm::radians(90.0f));
+    [[nodiscard]] glm::mat4 view() const;
+    [[nodiscard]] glm::mat4 projection(float aspect) const;
 
     void draw(ViewingMode, Uniforms const&, Framebuffer const&, InstancedNode const&);
 
