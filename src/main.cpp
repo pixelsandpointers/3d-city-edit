@@ -10,6 +10,7 @@
 #include "ui/SettingsPane.hpp"
 #include "ui/Viewport.hpp"
 
+#include <ImGuizmo.h>
 #include <filesystem>
 #include <glfw.h>
 #include <imgui.h>
@@ -170,6 +171,7 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
         setup_dock_builder(); // create docking layout before components are rendered
 

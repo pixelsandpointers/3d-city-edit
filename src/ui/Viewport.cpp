@@ -1,7 +1,15 @@
 #include "ui/Viewport.hpp"
 
 #include "core/Project.hpp"
+
+// clang-format off
+#include <imgui.h>
 #include <imgui_internal.h>
+#include <ImGuizmo.h>
+// clang-format on
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 
 Viewport::Viewport()
     : m_framebuffer{Framebuffer::create_simple(1, 1)}
@@ -56,6 +64,27 @@ void Viewport::render(double delta_time)
             auto const relative_pos = glm::vec2{mouse_pos.x - window_pos.x, m_framebuffer.height - mouse_pos.y - window_pos.y + 19};
 
             project->selected_node = m_picker.get_selected_node(*m_camera_controller.camera, *project->scene, relative_pos, glm::vec2{m_framebuffer.width, m_framebuffer.height});
+        }
+
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, m_framebuffer.width, m_framebuffer.height);
+
+        if (project->selected_node) {
+            auto const view = m_camera_controller.camera->view();
+            auto const projection = m_camera_controller.camera->projection(m_framebuffer.aspect);
+            auto model_matrix = project->selected_node->model_matrix;
+            auto delta_matrix = glm::mat4{1.0f};
+            if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), ImGuizmo::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(model_matrix), glm::value_ptr(delta_matrix))) {
+                auto& transform = project->selected_node->transform;
+                glm::vec3 delta_scale;
+                glm::quat delta_orientation;
+                glm::vec3 delta_position;
+                glm::vec3 delta_skew_unused;
+                glm::vec4 delta_projection_unused;
+                glm::decompose(delta_matrix, delta_scale, delta_orientation, delta_position, delta_skew_unused, delta_projection_unused);
+                transform.position += delta_position;
+                project->scene->compute_transforms();
+            }
         }
     }
 
