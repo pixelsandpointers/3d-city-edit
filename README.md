@@ -1,6 +1,15 @@
-# 3d
+# 3D City Editor
 
-A 3D editor to manipulate cityscapes. Built during an university project.
+A 3D editor to manipulate cityscapes. Built during a university project.
+
+## Usage
+
+There is no *open project* dialog implemented yet, so the project path has to be specified via a CLI argument.
+```
+./3d <path to directory or model>
+```
+If a path to a directory is provided, the containing project is loaded, or a new project is created there. Without an argument, the current working directory is used instead.
+In case the path points to a model file, a new project in the working directory is created and the given file is loaded.
 
 ## Building
 
