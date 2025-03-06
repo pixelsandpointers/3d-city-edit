@@ -115,6 +115,16 @@ void Viewport::render(double delta_time)
                     break;
                 case GizmoOperation::SCALE:
                     transform.scale *= delta_scale;
+                    auto const min_scale = 0.1f;
+                    if (transform.scale.x < min_scale) {
+                        transform.scale.x = min_scale;
+                    }
+                    if (transform.scale.y < min_scale) {
+                        transform.scale.y = min_scale;
+                    }
+                    if (transform.scale.z < min_scale) {
+                        transform.scale.z = min_scale;
+                    }
                     break;
                 }
                 project->scene->compute_transforms();
