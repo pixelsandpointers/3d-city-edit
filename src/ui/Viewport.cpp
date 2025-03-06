@@ -63,7 +63,7 @@ void Viewport::render(double delta_time)
 
         ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
 
-        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        if (ImGui::IsWindowHovered() && !ImGuizmo::IsOver() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             auto const mouse_pos = ImGui::GetMousePos();
             auto const window_pos = ImGui::GetWindowPos();
             // Some awful workaround for not being able to get the position of the `ImGui::Image` directly. At least I have no clue how to do that.
