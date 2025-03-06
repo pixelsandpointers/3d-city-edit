@@ -4,6 +4,7 @@
 #include <functional>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 class AsyncTaskQueue {
 public:
