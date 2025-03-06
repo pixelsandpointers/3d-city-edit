@@ -78,9 +78,9 @@ void Viewport::render(double delta_time)
 
         if (project->selected_node) {
             // Keyboard shortcuts to set gizmo operation
-            if (Input::key_pressed(GLFW_KEY_S)) {
+            if (Input::key_pressed(GLFW_KEY_E)) {
                 gizmo_operation = GizmoOperation::SCALE;
-            } else if (Input::key_pressed(GLFW_KEY_T)) {
+            } else if (Input::key_pressed(GLFW_KEY_Q)) {
                 gizmo_operation = GizmoOperation::TRANSLATE;
             } else if (Input::key_pressed(GLFW_KEY_R)) {
                 gizmo_operation = GizmoOperation::ROTATE;
