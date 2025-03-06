@@ -5,9 +5,6 @@
 
 std::optional<Image> Image::load_from_file(char const* path)
 {
-    unsigned int texture_id;
-    glGenTextures(1, &texture_id);
-
     int width, height, n_components;
     unsigned char* data = stbi_load(path, &width, &height, &n_components, 0);
 
@@ -23,7 +20,6 @@ std::optional<Image> Image::load_from_file(char const* path)
         break;
     default:
         stbi_image_free(data);
-        glDeleteTextures(1, &texture_id);
         return {};
     }
 
