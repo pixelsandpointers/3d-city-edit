@@ -1,5 +1,5 @@
 #include "ui/Viewport.hpp"
-
+#include "core/Input.hpp"
 #include "core/Project.hpp"
 #include <map>
 
@@ -77,6 +77,15 @@ void Viewport::render(double delta_time)
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, m_framebuffer.width, m_framebuffer.height);
 
         if (project->selected_node) {
+            // Keyboard shortcuts to set gizmo operation
+            if (Input::key_pressed(GLFW_KEY_S)) {
+                gizmo_operation = GizmoOperation::SCALE;
+            } else if (Input::key_pressed(GLFW_KEY_T)) {
+                gizmo_operation = GizmoOperation::TRANSLATE;
+            } else if (Input::key_pressed(GLFW_KEY_R)) {
+                gizmo_operation = GizmoOperation::ROTATE;
+            }
+
             ImGuizmo::OPERATION operation;
             glm::vec3 snap_size;
             switch (gizmo_operation) {
