@@ -123,7 +123,7 @@ Texture const* Project::get_texture(std::filesystem::path path)
         return &m_textures.at(path);
     }
 
-    m_textures.emplace(path, Texture::fallback_placeholder(m_fallback_texture.m_id));
+    m_textures.emplace(path, Texture::fallback_placeholder(m_fallback_texture.id));
     auto* texture = &m_textures.at(path);
 
     if (!texture) {

@@ -19,7 +19,7 @@ struct Image {
 struct ColorTexture;
 
 struct Texture {
-    unsigned int m_id;
+    unsigned int id;
     int width;
     int height;
     int channels;

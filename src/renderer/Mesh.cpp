@@ -22,7 +22,7 @@ void Mesh::draw() const
 void Mesh::draw(ViewingMode mode) const
 {
     auto const& shader = Shader::get_shader_for_mode(mode);
-    auto diffuse_texture_id = mode == ViewingMode::SOLID ? Project::get_current()->fallback_texture()->m_id : m_texture_diffuse->m_id;
+    auto diffuse_texture_id = mode == ViewingMode::SOLID ? Project::get_current()->fallback_texture()->id : m_texture_diffuse->id;
 
     // set diffuse texture
     glActiveTexture(GL_TEXTURE0);
@@ -32,7 +32,7 @@ void Mesh::draw(ViewingMode mode) const
     // set opacity texture
     glActiveTexture(GL_TEXTURE1);
     shader.set_int("texture_opacity", 1);
-    glBindTexture(GL_TEXTURE_2D, m_texture_opacity->m_id);
+    glBindTexture(GL_TEXTURE_2D, m_texture_opacity->id);
 
     // set active
     glBindVertexArray(m_vao);
