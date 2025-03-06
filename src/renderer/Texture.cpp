@@ -23,11 +23,14 @@ std::optional<Image> Image::load_from_file(char const* path)
         return {};
     }
 
+    auto data_vector = std::vector<unsigned char>(data, data + n_components * width * height);
+    stbi_image_free(data);
+
     return Image{
         .width = width,
         .height = height,
         .channels = n_components,
-        .data = std::vector<unsigned char>(data, data + n_components * width * height),
+        .data = std::move(data_vector),
     };
 }
 
