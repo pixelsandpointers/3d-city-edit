@@ -141,8 +141,8 @@ void Camera::draw(ViewingMode mode,
     shader.set_float("light.power", uniforms.light.power);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
+        shader.set_mat4("model", transform_matrix);
         for (auto const& mesh : node_data.meshes) {
-            shader.set_mat4("model", transform_matrix);
             mesh.draw(mode);
         }
     });
@@ -170,8 +170,8 @@ void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& n
     Shader::albedo.set_int("texture_diffuse", 0);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
+        Shader::albedo.set_mat4("model", transform_matrix);
         for (auto const& mesh : node_data.meshes) {
-            Shader::albedo.set_mat4("model", transform_matrix);
             mesh.draw();
         }
     });
