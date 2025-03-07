@@ -14,12 +14,13 @@ Framebuffer Framebuffer::get_default(int width, int height)
         width,
         height,
         static_cast<float>(width) / static_cast<float>(height),
-    };
+        0};
 }
 
-Framebuffer Framebuffer::create_simple(int width, int height, Preset preset)
+Framebuffer Framebuffer::create_simple(int width, int height, Preset preset, unsigned int num_samples)
 {
     auto fb = Framebuffer::get_default(width, height);
+    fb.num_samples = num_samples;
 
     switch (preset) {
     case Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED:
@@ -38,19 +39,31 @@ Framebuffer Framebuffer::create_simple(int width, int height, Preset preset)
     glBindFramebuffer(GL_FRAMEBUFFER, fb.id);
 
     glGenTextures(1, &fb.color_texture);
-    glBindTexture(GL_TEXTURE_2D, fb.color_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, fb.m_internal_format, fb.width, fb.height, 0, fb.m_format, fb.m_type, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.color_texture, 0);
+    if (fb.num_samples > 0) {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.color_texture);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fb.num_samples, fb.m_internal_format, fb.width, fb.height, GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, fb.color_texture, 0);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, fb.color_texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, fb.m_internal_format, fb.width, fb.height, 0, fb.m_format, fb.m_type, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.color_texture, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     glGenRenderbuffers(1, &fb.depth_rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, fb.depth_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.depth_rbo);
+    if (fb.num_samples > 0) {
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, fb.num_samples, GL_DEPTH24_STENCIL8, fb.width, fb.height);
+    } else {
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width, fb.height);
+    }
 
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.depth_rbo);
     auto framebuffer_ready = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     if (!framebuffer_ready) {
         std::cerr << "Framebuffer creation failed!\n";
@@ -67,6 +80,7 @@ Framebuffer::Framebuffer(Framebuffer&& other)
     , width{other.width}
     , height{other.height}
     , aspect{other.aspect}
+    , num_samples{other.num_samples}
 {
     // Destructor is called on old object after move
     other.id = 0;
@@ -81,6 +95,13 @@ Framebuffer::~Framebuffer()
     glDeleteRenderbuffers(1, &depth_rbo);
 }
 
+void Framebuffer::blit(Framebuffer const& target) const
+{
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.id);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, target.width, target.height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+}
+
 void Framebuffer::resize(int w, int h)
 {
     width = w;
@@ -88,13 +109,22 @@ void Framebuffer::resize(int w, int h)
     aspect = static_cast<float>(w) / static_cast<float>(h);
 
     if (color_texture) {
-        glBindTexture(GL_TEXTURE_2D, color_texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, m_internal_format, width, height, 0, m_format, m_type, NULL);
+        if (num_samples > 0) {
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, color_texture);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, num_samples, m_internal_format, width, height, GL_TRUE);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, color_texture);
+            glTexImage2D(GL_TEXTURE_2D, 0, m_internal_format, width, height, 0, m_format, m_type, NULL);
+        }
     }
 
     if (depth_rbo) {
         glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        if (num_samples > 0) {
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, num_samples, GL_DEPTH24_STENCIL8, width, height);
+        } else {
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        }
     }
 }
 
