@@ -7,6 +7,7 @@
 #include "ui/AssetBrowser.hpp"
 #include "ui/ObjectDetails.hpp"
 #include "ui/ObjectSelectionTree.hpp"
+#include "ui/Performance.hpp"
 #include "ui/SettingsPane.hpp"
 #include "ui/Viewport.hpp"
 
@@ -145,6 +146,7 @@ int main()
 
     auto asset_browser = AssetBrowser{};
     auto viewport_window = Viewport{};
+    auto performance_window = Performance{};
 
     project->scene->compute_transforms();
     auto last_frame = glfwGetTime();
@@ -175,6 +177,11 @@ int main()
         asset_browser.render();
         settings_pane.render();
         viewport_window.render(delta_time);
+
+        // MSVC sets _DEBUG in debug builds, clang sets NDEBUG in release builds
+#if defined(_DEBUG) or not defined(NDEBUG)
+        performance_window.render(delta_time);
+#endif
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
