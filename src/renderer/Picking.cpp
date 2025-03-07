@@ -34,8 +34,8 @@ InstancedNode* Picking::get_selected_node(Camera const& camera, InstancedNode& s
     glViewport(0, 0, m_framebuffer.width, m_framebuffer.height);
 
     // view/projection transformations
-    shader.set_mat4("projection", camera.projection(m_framebuffer.aspect));
-    shader.set_mat4("view", camera.view());
+    shader.set_uniform(shader.uniform_locations.projection, camera.projection(m_framebuffer.aspect));
+    shader.set_uniform(shader.uniform_locations.view, camera.view());
 
     uint32_t i = 1; // Treat 0 as error
     traverse_instances(scene, [&](auto transform_matrix, auto& instance) {
@@ -43,8 +43,8 @@ InstancedNode* Picking::get_selected_node(Camera const& camera, InstancedNode& s
             return false;
         }
 
-        shader.set_uint("id", i);
-        shader.set_mat4("model", transform_matrix);
+        shader.set_uniform(shader.uniform_locations.id, i);
+        shader.set_uniform(shader.uniform_locations.model, transform_matrix);
 
         for (auto const& mesh : instance.node->meshes) {
             mesh.draw();

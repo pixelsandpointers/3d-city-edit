@@ -26,12 +26,12 @@ void Mesh::draw(ViewingMode mode) const
 
     // set diffuse texture
     glActiveTexture(GL_TEXTURE0);
-    shader.set_int("texture_diffuse", 0);
+    shader.set_uniform(shader.uniform_locations.texture_diffuse, 0);
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_id);
 
     // set opacity texture
     glActiveTexture(GL_TEXTURE1);
-    shader.set_int("texture_opacity", 1);
+    shader.set_uniform(shader.uniform_locations.texture_opacity, 1);
     glBindTexture(GL_TEXTURE_2D, m_texture_opacity->id);
 
     // set active
