@@ -19,15 +19,17 @@ struct Framebuffer {
     int width;
     int height;
     float aspect;
+    unsigned int num_samples;
 
     static Framebuffer get_default(int width, int height);
-    static Framebuffer create_simple(int width, int height, Preset preset = Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED);
+    static Framebuffer create_simple(int width, int height, Preset preset = Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED, unsigned int num_samples = 0);
 
     Framebuffer() = default;
     Framebuffer(Framebuffer&) = delete;
     Framebuffer(Framebuffer&&);
     ~Framebuffer();
     void resize(int width, int height);
+    void blit(Framebuffer const& target) const;
 
 private:
     GLenum m_internal_format;
@@ -36,13 +38,14 @@ private:
 
     // This is ugly and shouldn't be necessary...
     // Why is the definition of an Aggregate so strange?
-    Framebuffer(unsigned int id, unsigned int color_texture, unsigned int depth_rbo, int width, int height, float aspect)
+    Framebuffer(unsigned int id, unsigned int color_texture, unsigned int depth_rbo, int width, int height, float aspect, unsigned int num_samples)
         : id{id}
         , color_texture{color_texture}
         , depth_rbo{depth_rbo}
         , width{width}
         , height{height}
         , aspect{aspect}
+        , num_samples{num_samples}
     { }
 };
 

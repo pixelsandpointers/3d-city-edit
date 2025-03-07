@@ -13,7 +13,8 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 Viewport::Viewport()
-    : m_framebuffer{Framebuffer::create_simple(1, 1)}
+    : m_framebuffer{Framebuffer::create_simple(1, 1, Framebuffer::Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED, 4)}
+    , m_blitted_framebuffer{Framebuffer::create_simple(1, 1, Framebuffer::Preset::RGB_UNSIGNED_INTEGRAL_NORMALIZED, 0)}
     , m_camera_controller{CameraController::Type::UNITY, glm::vec3{}}
 {
 }
@@ -41,6 +42,7 @@ void Viewport::render(double delta_time)
         auto size = ImGui::GetContentRegionAvail();
         if (size.x != m_framebuffer.width || size.y != m_framebuffer.height) {
             m_framebuffer.resize(size.x, size.y);
+            m_blitted_framebuffer.resize(size.x, size.y);
         }
 
         if (config.draw_wireframe) {
@@ -54,14 +56,24 @@ void Viewport::render(double delta_time)
         m_camera_controller.rotation_speed = config.rotation_speed;
         m_camera_controller.zoom_speed = config.zoom_speed;
         m_camera_controller.camera->draw(config.viewing_mode, config.viewport_uniforms, m_framebuffer, *project->scene);
+
         if (project->selected_node) {
             m_camera_controller.camera->draw_outline(m_framebuffer, *project->selected_node);
+        }
+
+        if (m_framebuffer.num_samples > 0) {
+            m_framebuffer.blit(m_blitted_framebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
         config.camera_position = m_camera_controller.camera->position;
         config.camera_target = m_camera_controller.camera->target;
 
-        ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+        if (m_framebuffer.num_samples > 0) {
+            ImGui::Image(m_blitted_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+        } else {
+            ImGui::Image(m_framebuffer.color_texture, ImVec2(m_framebuffer.width, m_framebuffer.height), ImVec2{0.0f, 1.0f}, ImVec2{1.0f, 0.0f});
+        }
 
         if (ImGui::IsWindowHovered() && !ImGuizmo::IsOver() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             auto const mouse_pos = ImGui::GetMousePos();

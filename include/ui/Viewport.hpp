@@ -20,6 +20,7 @@ struct Viewport {
 
 private:
     Framebuffer m_framebuffer;
+    Framebuffer m_blitted_framebuffer;
     CameraController m_camera_controller;
     Picking m_picker;
 };
