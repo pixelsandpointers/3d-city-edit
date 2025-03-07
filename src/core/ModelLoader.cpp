@@ -55,7 +55,7 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
                 return optional_path.value();
             }
         }
-    } catch (std::exception const e) {
+    } catch (std::exception const& e) {
         std::cerr << "Failed to guess texture path: " << e.what() << "\n";
     }
     // Fail

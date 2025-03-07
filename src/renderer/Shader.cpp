@@ -273,6 +273,8 @@ Shader const& Shader::get_shader_for_mode(ViewingMode mode)
     case ViewingMode::RENDERED:
         shader = &Shader::lighting;
         break;
+    default:
+        std::abort();
     };
 
     assert(shader);

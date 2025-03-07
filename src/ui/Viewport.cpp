@@ -101,6 +101,8 @@ void Viewport::render(double delta_time)
                 operation = ImGuizmo::SCALE;
                 snap_size = glm::vec3{config.gizmo_snap_scale};
                 break;
+            default:
+                std::abort();
             }
 
             auto const view = m_camera_controller.camera->view();
@@ -122,7 +124,7 @@ void Viewport::render(double delta_time)
                 case GizmoOperation::ROTATE:
                     transform.orientation = glm::normalize(delta_orientation) * transform.orientation;
                     break;
-                case GizmoOperation::SCALE:
+                case GizmoOperation::SCALE: {
                     transform.scale *= delta_scale;
                     auto const min_scale = 0.1f;
                     if (transform.scale.x < min_scale) {
@@ -134,6 +136,9 @@ void Viewport::render(double delta_time)
                     if (transform.scale.z < min_scale) {
                         transform.scale.z = min_scale;
                     }
+                    break;
+                }
+                default:
                     break;
                 }
                 project->scene->compute_transforms();
@@ -174,6 +179,8 @@ void Viewport::render(double delta_time)
                     step = 0.1f;
                     fast_step = 1.0f;
                     break;
+                default:
+                    std::abort();
                 }
                 ImGui::InputFloat("snap size", snap_size, step, fast_step);
             }
