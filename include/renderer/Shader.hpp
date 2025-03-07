@@ -146,7 +146,6 @@ public:
     static void init();
 
     Shader() = default;
-    Shader(char const* vertex_path, char const* fragment_path);
     Shader(ShaderSource);
     Shader(Shader const&) = delete;
     Shader(Shader&&);

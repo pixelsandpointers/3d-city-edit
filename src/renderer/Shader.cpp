@@ -1,8 +1,6 @@
 #include "renderer/Shader.hpp"
 
-#include <fstream>
 #include <iostream>
-#include <sstream>
 
 /**
  * Implements basic texture mapping, computing
@@ -297,47 +295,6 @@ Shader::Shader(ShaderSource source)
     source.uniform_caching_function(uniform_locations, [&](int& location, char const* name) {
         location = glGetUniformLocation(m_id, name);
     });
-}
-
-Shader::Shader(char const* vertex_path, char const* fragment_path)
-{
-    std::string vertex_code;
-    std::string fragment_code;
-    std::ifstream vertex_shader_file;
-    std::ifstream fragment_shader_file;
-
-    vertex_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    fragment_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-    try {
-        vertex_shader_file.open(vertex_path);
-        fragment_shader_file.open(fragment_path);
-        std::stringstream vertex_shader_stream, fragment_shader_stream;
-
-        vertex_shader_stream << vertex_shader_file.rdbuf();
-        fragment_shader_stream << fragment_shader_file.rdbuf();
-
-        vertex_shader_file.close();
-        fragment_shader_file.close();
-
-        vertex_code = vertex_shader_stream.str();
-        fragment_code = fragment_shader_stream.str();
-    } catch (std::ifstream::failure e) {
-        std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESS\n";
-    }
-
-    char const* vertex_source = vertex_code.c_str();
-    char const* fragment_source = fragment_code.c_str();
-
-    // Compile shaders and set up the shader program
-    auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_source);
-    auto const fragment_shader = compile_shader(ShadingStage::FRAGMENT, fragment_source);
-
-    link_shaders_to_program(vertex_shader, fragment_shader);
-
-    // Cleanup shaders as they are already linked into our program
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
 }
 
 Shader::Shader(Shader&& old)
