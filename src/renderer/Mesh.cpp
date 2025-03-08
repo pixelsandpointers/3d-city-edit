@@ -16,7 +16,6 @@ void Mesh::draw() const
 {
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
 }
 
 void Mesh::draw(ViewingMode mode) const
@@ -37,9 +36,6 @@ void Mesh::draw(ViewingMode mode) const
     // set active
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(m_indices.size()), GL_UNSIGNED_INT, nullptr);
-    // unbind VAO
-    glBindVertexArray(0);
-    glActiveTexture(GL_TEXTURE0);
 }
 
 void Mesh::setup_mesh()

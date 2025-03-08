@@ -225,5 +225,4 @@ void Camera::draw_quad()
 
     glBindVertexArray(m_quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
 }
