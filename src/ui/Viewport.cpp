@@ -186,6 +186,18 @@ void Viewport::render(double delta_time)
             }
             ImGui::EndChild();
         }
+
+        if (ImGui::IsWindowFocused() && project->selected_node && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            auto parent = project->selected_node->find_parent(*project->scene);
+            auto const it = std::find_if(parent->children.begin(), parent->children.end(), [&](std::unique_ptr<InstancedNode> const& current) {
+                return current.get() == project->selected_node;
+            });
+
+            if (it != parent->children.end()) {
+                parent->children.erase(it);
+                project->selected_node = nullptr;
+            }
+        }
     }
 
     // Focus Viewport window not only with the left, but also the middle and right mouse button.
