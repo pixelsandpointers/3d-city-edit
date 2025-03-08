@@ -8,9 +8,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Text
     , m_texture_diffuse(texture_diffuse)
     , m_texture_opacity(texture_opacity)
     , aabb(aabb)
-{
-    setup_mesh();
-}
+{ }
 
 void Mesh::draw() const
 {
@@ -40,6 +38,10 @@ void Mesh::draw(ViewingMode mode) const
 
 void Mesh::setup_mesh()
 {
+    if (m_vao != 0) {
+        return;
+    }
+
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ebo);

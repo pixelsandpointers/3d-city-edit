@@ -229,13 +229,46 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
     auto location = NodeLocation::file(parent_location.file_path, parent_location.node_path / name);
     auto new_node = Node::create(name, new_transform, location);
 
+    // This messy code transforms the vertices and the positions in such a way that the mesh vertices are built around the object center.
+    // This ensures that the gizmos aren't diplayed somewhere far away.
+
+    std::optional<AABB> aabb;
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        new_node.meshes.push_back(process_mesh(mesh, scene, directory));
+        auto new_mesh = process_mesh(mesh, scene, directory);
+        if (!aabb.has_value()) {
+            aabb = new_mesh.aabb;
+        } else {
+            aabb = aabb->merge(new_mesh.aabb);
+        }
+        new_node.meshes.push_back(std::move(new_mesh));
     }
+
+    auto center = glm::vec3{0.0f};
+    if (aabb.has_value()) {
+        center = glm::vec3{
+            aabb->min.x + (aabb->max.x - aabb->min.x) / 2,
+            aabb->min.y + (aabb->max.y - aabb->min.y) / 2,
+            aabb->min.z + (aabb->max.z - aabb->min.z) / 2,
+        };
+    }
+
+    for (auto& mesh : new_node.meshes) {
+        for (auto& vertex : mesh.m_vertices) {
+            vertex.m_position -= center;
+        }
+        mesh.aabb.min -= center;
+        mesh.aabb.max -= center;
+        mesh.setup_mesh();
+    }
+
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        new_node.children.push_back(process_node(node->mChildren[i], scene, directory, location));
+        auto new_child = process_node(node->mChildren[i], scene, directory, location);
+        new_child.transform.position -= center;
+        new_node.children.push_back(std::move(new_child));
     }
+
+    new_node.transform.position = glm::vec3{new_node.transform.get_local_matrix() * glm::vec4{center, 1.0f}};
 
     return new_node;
 }
