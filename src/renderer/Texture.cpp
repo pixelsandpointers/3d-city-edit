@@ -102,6 +102,7 @@ Texture::Texture(Texture&& other)
     , width{other.width}
     , height{other.height}
     , channels{other.channels}
+    , is_loaded{other.is_loaded}
 {
     // Important: Destructor will be called after move!
     other.id = 0;
@@ -114,6 +115,7 @@ Texture& Texture::operator=(Texture&& other)
         width = other.width;
         height = other.height;
         channels = other.channels;
+        is_loaded = other.is_loaded;
 
         // Important: Destructor will be called after move!
         other.id = 0;
