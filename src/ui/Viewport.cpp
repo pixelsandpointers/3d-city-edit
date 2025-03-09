@@ -19,9 +19,9 @@ Viewport::Viewport()
 }
 
 std::map<Viewport::GizmoOperation, char const*> const gizmo_operation_names{
-    {Viewport::GizmoOperation::TRANSLATE, "Translate"},
-    {Viewport::GizmoOperation::ROTATE, "Rotate"},
-    {Viewport::GizmoOperation::SCALE, "Scale"},
+    {Viewport::GizmoOperation::TRANSLATE, "Translate [Q]"},
+    {Viewport::GizmoOperation::ROTATE, "Rotate [R]"},
+    {Viewport::GizmoOperation::SCALE, "Scale [E]"},
 };
 
 void Viewport::render(double delta_time)
