@@ -126,14 +126,14 @@ void Viewport::render(double delta_time)
                     break;
                 case GizmoOperation::SCALE: {
                     transform.scale *= delta_scale;
-                    auto const min_scale = 0.1f;
-                    if (transform.scale.x < min_scale) {
+                    auto const min_scale = 0.01f;
+                    if (transform.scale.x < min_scale || std::isnan(transform.scale.x)) {
                         transform.scale.x = min_scale;
                     }
-                    if (transform.scale.y < min_scale) {
+                    if (transform.scale.y < min_scale || std::isnan(transform.scale.y)) {
                         transform.scale.y = min_scale;
                     }
-                    if (transform.scale.z < min_scale) {
+                    if (transform.scale.z < min_scale || std::isnan(transform.scale.z)) {
                         transform.scale.z = min_scale;
                     }
                     break;
@@ -176,8 +176,8 @@ void Viewport::render(double delta_time)
                     break;
                 case GizmoOperation::SCALE:
                     snap_size = &config.gizmo_snap_scale;
-                    step = 0.1f;
-                    fast_step = 1.0f;
+                    step = 0.01f;
+                    fast_step = 0.1f;
                     break;
                 default:
                     std::abort();

@@ -24,5 +24,5 @@ struct Config {
     bool gizmo_use_snap{true};
     float gizmo_snap_translation{100.0f};
     float gizmo_snap_rotation{10.0f};
-    float gizmo_snap_scale{1.0f};
+    float gizmo_snap_scale{0.1f};
 };
