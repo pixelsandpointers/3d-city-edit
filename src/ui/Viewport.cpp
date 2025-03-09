@@ -75,6 +75,7 @@ void Viewport::render(double delta_time)
 
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, m_framebuffer.width, m_framebuffer.height);
+        ImGuizmo::AllowAxisFlip(false);
 
         if (project->selected_node) {
             // Keyboard shortcuts to set gizmo operation
