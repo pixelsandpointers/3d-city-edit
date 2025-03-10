@@ -10,5 +10,4 @@ struct ObjectSelectionTree {
 
 private:
     std::optional<ImRect> m_prev_rect;
-    int m_imgui_treenode_id;
 };

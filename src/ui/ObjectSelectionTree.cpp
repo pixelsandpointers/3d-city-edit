@@ -46,7 +46,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             ? ImGuiTreeNodeFlags_Selected
             : ImGuiTreeNodeFlags_None;
 
-        auto const treenode_label = child->name + "##node_" + std::to_string(m_imgui_treenode_id++);
+        auto const treenode_label = child->name + "##node_" + std::to_string(child->id);
 
         if (!child->children.empty()) {
             open = ImGui::TreeNodeEx(treenode_label.c_str(), flags_selected);
@@ -135,7 +135,6 @@ void ObjectSelectionTree::render()
         if (auto& scene = Project::get_current()->scene; scene) {
             if (ImGui::BeginTable("table0", 1)) {
                 m_prev_rect = {};
-                m_imgui_treenode_id = 0;
                 traverse_nodes(*scene);
             }
             ImGui::EndTable();
