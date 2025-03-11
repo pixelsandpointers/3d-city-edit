@@ -30,8 +30,6 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
     for (std::size_t index = 0; index < root.children.size(); ++index) {
         auto child = root.children[index].get();
 
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
         bool open = false;
 
         auto is_selected = child == project->selected_node;
@@ -133,11 +131,28 @@ void ObjectSelectionTree::render()
 {
     if (ImGui::Begin("Object Tree")) {
         if (auto& scene = Project::get_current()->scene; scene) {
-            if (ImGui::BeginTable("table0", 1)) {
-                m_prev_rect = {};
-                traverse_nodes(*scene);
+            m_prev_rect = {};
+            traverse_nodes(*scene);
+
+            auto min = ImVec2{ImGui::GetWindowPos().x + ImGui::GetCursorPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPos().y};
+            if (!scene->children.empty()) {
+                min = ImVec2{ImGui::GetWindowPos().x + ImGui::GetCursorPos().x, ImGui::GetWindowPos().y + GImGui->LastItemData.Rect.Max.y};
             }
-            ImGui::EndTable();
+            auto const max = ImVec2{
+                min.x + ImGui::GetContentRegionAvail().x,
+                min.y + std::max(ImGui::GetContentRegionAvail().y, ImGui::GetTextLineHeight()),
+            };
+            auto const remaining_space = ImRect{min, max};
+
+            if (ImGui::BeginDragDropTargetCustom(remaining_space, GImGui->LastItemData.ID)) {
+                if (auto payload = ImGui::AcceptDragDropPayload("node")) {
+                    auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
+                    scene->children.push_back(instantiate_and_rename_node(*node_to_instantiate));
+                }
+
+                scene->compute_transforms();
+                ImGui::EndDragDropTarget();
+            }
         } else {
             ImGui::Text("No scene open");
         }
