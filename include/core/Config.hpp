@@ -10,6 +10,8 @@ struct Config {
     bool draw_wireframe = false;
     glm::vec3 fallback_color{255, 255, 255};
     float fov{glm::radians(90.0f)}; // Vertical fov in radians
+    float near{10.0f};
+    float far{100000.0f};
 
     // camera
     CameraController::Type camera_controller_type{CameraController::Type::UNITY};

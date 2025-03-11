@@ -36,6 +36,9 @@ void SettingsPane::render()
             config.fov = glm::radians(fov_degrees);
         }
 
+        ImGui::InputFloat("near", &config.near, 1.0f);
+        ImGui::InputFloat("far", &config.far, 1.0f);
+
         // Lighting Controls
         ImGui::SeparatorText("Lighting Controls");
         ImGui::SliderFloat("Ambient Light Strength", &config.viewport_uniforms.ambient_strength, 0.0f, 1.0f);

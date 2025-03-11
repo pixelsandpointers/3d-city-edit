@@ -59,6 +59,8 @@ nlohmann::json Serializer::serialize(Config const& source) const
     target["draw_wireframe"] = source.draw_wireframe;
     target["fallback_color"] = source.fallback_color;
     target["fov"] = source.fov;
+    target["near"] = source.near;
+    target["far"] = source.far;
     target["camera_controller_type"] = source.camera_controller_type;
     target["movement_speed"] = source.movement_speed;
     target["rotation_speed"] = source.rotation_speed;
@@ -125,6 +127,8 @@ Config Serializer::deserialize_config(nlohmann::json& source) const
         .draw_wireframe = source["draw_wireframe"],
         .fallback_color = source["fallback_color"],
         .fov = source["fov"],
+        .near = source["near"],
+        .far = source["far"],
         .camera_controller_type = source["camera_controller_type"],
         .movement_speed = source["movement_speed"],
         .rotation_speed = source["rotation_speed"],
