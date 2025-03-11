@@ -70,6 +70,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                 auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
                 child->children.push_back(instantiate_and_rename_node(*node_to_instantiate));
+                project->scene->compute_transforms();
             }
 
             // Drop InstancedNode onto TreeNode -> move to children
@@ -79,9 +80,8 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
                 auto source_node = std::move(*source_iterator);
                 instancednode_payload.source_vector.erase(source_iterator);
                 child->children.push_back(std::move(source_node));
+                project->scene->compute_transforms();
             }
-
-            project->scene->compute_transforms();
             ImGui::EndDragDropTarget();
         }
 
@@ -98,6 +98,7 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
                 if (auto payload = ImGui::AcceptDragDropPayload("node")) {
                     auto node_to_instantiate = *static_cast<Node const**>(payload->Data);
                     root.children.insert(root.children.begin() + index, instantiate_and_rename_node(*node_to_instantiate));
+                    project->scene->compute_transforms();
                 }
 
                 // Drop InstancedNode between TreeNodes -> move to parent node as sibling of current node
@@ -110,9 +111,8 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
                         --index;
                     }
                     root.children.insert(root.children.begin() + index, std::move(source_node));
+                    project->scene->compute_transforms();
                 }
-
-                project->scene->compute_transforms();
                 ImGui::EndDragDropTarget();
             }
         }
