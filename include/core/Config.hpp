@@ -15,7 +15,7 @@ struct Config {
     CameraController::Type camera_controller_type{CameraController::Type::UNITY};
     float movement_speed{1000.0f}; // Movement speed in distance / second
     float rotation_speed{0.2f}; // Mouse sensitivity for looking around in radians / second
-    float zoom_speed{1.0f};
+    float zoom_speed{5.0f};
 
     // FIXME: The CameraController breaks if position and target are equal
     glm::vec3 camera_position{0.0f};
@@ -24,5 +24,5 @@ struct Config {
     bool gizmo_use_snap{true};
     float gizmo_snap_translation{100.0f};
     float gizmo_snap_rotation{10.0f};
-    float gizmo_snap_scale{1.0f};
+    float gizmo_snap_scale{0.1f};
 };

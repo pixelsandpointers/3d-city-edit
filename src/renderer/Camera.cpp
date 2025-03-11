@@ -159,20 +159,20 @@ void Camera::draw(ViewingMode mode,
     glViewport(0, 0, framebuffer.width, framebuffer.height);
 
     // view/projection transformations
-    shader.set_mat4("projection", projection(framebuffer.aspect));
-    shader.set_mat4("view", view());
-    shader.set_vec3("cameraPos", position);
-    shader.set_float("ambientStrength", uniforms.ambient_strength);
-    shader.set_float("specularityFactor", uniforms.specularity_factor);
-    shader.set_float("shininess", uniforms.shininess);
-    shader.set_float("gamma", uniforms.gamma);
-    shader.set_vec3("light.direction", glm::vec3(uniforms.light.direction));
-    shader.set_vec3("light.color", uniforms.light.color);
-    shader.set_float("light.power", uniforms.light.power);
+    shader.set_uniform(shader.uniform_locations.projection, projection(framebuffer.aspect));
+    shader.set_uniform(shader.uniform_locations.view, view());
+    shader.set_uniform(shader.uniform_locations.camera_pos, position);
+    shader.set_uniform(shader.uniform_locations.ambient_strength, uniforms.ambient_strength);
+    shader.set_uniform(shader.uniform_locations.specularity_factor, uniforms.specularity_factor);
+    shader.set_uniform(shader.uniform_locations.shininess, uniforms.shininess);
+    shader.set_uniform(shader.uniform_locations.gamma, uniforms.gamma);
+    shader.set_uniform(shader.uniform_locations.light_direction, glm::vec3(uniforms.light.direction));
+    shader.set_uniform(shader.uniform_locations.light_color, uniforms.light.color);
+    shader.set_uniform(shader.uniform_locations.light_power, uniforms.light.power);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
+        shader.set_uniform(shader.uniform_locations.model, transform_matrix);
         for (auto const& mesh : node_data.meshes) {
-            shader.set_mat4("model", transform_matrix);
             mesh.draw(mode);
         }
     });
@@ -192,16 +192,17 @@ void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& n
 
     // render selected node in white to m_mask_framebuffer (albedo shader with outline color texture)
     Shader::albedo.use();
-    Shader::albedo.set_mat4("projection", projection(framebuffer.aspect));
-    Shader::albedo.set_mat4("view", view());
-    Shader::albedo.set_float("gamma", 1.0f);
+    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.projection, projection(framebuffer.aspect));
+    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.view, view());
+    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.gamma, 1.0f);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, project->white_texture()->m_id);
-    Shader::albedo.set_int("texture_diffuse", 0);
+    glBindTexture(GL_TEXTURE_2D, project->white_texture()->id);
+    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.texture_diffuse, 0);
+    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.texture_opacity, 0);
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
+        Shader::albedo.set_uniform(Shader::albedo.uniform_locations.model, transform_matrix);
         for (auto const& mesh : node_data.meshes) {
-            Shader::albedo.set_mat4("model", transform_matrix);
             mesh.draw();
         }
     });
@@ -217,8 +218,8 @@ void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& n
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_mask_framebuffer.color_texture);
 
-    Shader::post_process_outline.set_int("tex", 0);
-    Shader::post_process_outline.set_vec3("color", glm::vec3{0.84f, 0.5f, 0.1f});
+    Shader::post_process_outline.set_uniform(Shader::post_process_outline.uniform_locations.tex, 0);
+    Shader::post_process_outline.set_uniform(Shader::post_process_outline.uniform_locations.color, glm::vec3{0.84f, 0.5f, 0.1f});
 
     draw_quad();
 
@@ -255,5 +256,4 @@ void Camera::draw_quad()
 
     glBindVertexArray(m_quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
 }

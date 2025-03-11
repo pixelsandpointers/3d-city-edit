@@ -20,9 +20,9 @@ Viewport::Viewport()
 }
 
 std::map<Viewport::GizmoOperation, char const*> const gizmo_operation_names{
-    {Viewport::GizmoOperation::TRANSLATE, "Translate"},
-    {Viewport::GizmoOperation::ROTATE, "Rotate"},
-    {Viewport::GizmoOperation::SCALE, "Scale"},
+    {Viewport::GizmoOperation::TRANSLATE, "Translate [Q]"},
+    {Viewport::GizmoOperation::ROTATE, "Rotate [R]"},
+    {Viewport::GizmoOperation::SCALE, "Scale [E]"},
 };
 
 void Viewport::render(double delta_time)
@@ -87,6 +87,7 @@ void Viewport::render(double delta_time)
 
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, m_framebuffer.width, m_framebuffer.height);
+        ImGuizmo::AllowAxisFlip(false);
 
         if (project->selected_node) {
             // Keyboard shortcuts to set gizmo operation
@@ -113,6 +114,8 @@ void Viewport::render(double delta_time)
                 operation = ImGuizmo::SCALE;
                 snap_size = glm::vec3{config.gizmo_snap_scale};
                 break;
+            default:
+                std::abort();
             }
 
             auto const view = m_camera_controller.camera->view();
@@ -134,18 +137,21 @@ void Viewport::render(double delta_time)
                 case GizmoOperation::ROTATE:
                     transform.orientation = glm::normalize(delta_orientation) * transform.orientation;
                     break;
-                case GizmoOperation::SCALE:
+                case GizmoOperation::SCALE: {
                     transform.scale *= delta_scale;
-                    auto const min_scale = 0.1f;
-                    if (transform.scale.x < min_scale) {
+                    auto const min_scale = 0.01f;
+                    if (transform.scale.x < min_scale || std::isnan(transform.scale.x)) {
                         transform.scale.x = min_scale;
                     }
-                    if (transform.scale.y < min_scale) {
+                    if (transform.scale.y < min_scale || std::isnan(transform.scale.y)) {
                         transform.scale.y = min_scale;
                     }
-                    if (transform.scale.z < min_scale) {
+                    if (transform.scale.z < min_scale || std::isnan(transform.scale.z)) {
                         transform.scale.z = min_scale;
                     }
+                    break;
+                }
+                default:
                     break;
                 }
                 project->scene->compute_transforms();
@@ -183,13 +189,27 @@ void Viewport::render(double delta_time)
                     break;
                 case GizmoOperation::SCALE:
                     snap_size = &config.gizmo_snap_scale;
-                    step = 0.1f;
-                    fast_step = 1.0f;
+                    step = 0.01f;
+                    fast_step = 0.1f;
                     break;
+                default:
+                    std::abort();
                 }
                 ImGui::InputFloat("snap size", snap_size, step, fast_step);
             }
             ImGui::EndChild();
+        }
+
+        if (ImGui::IsWindowFocused() && project->selected_node && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            auto parent = project->selected_node->find_parent(*project->scene);
+            auto const it = std::find_if(parent->children.begin(), parent->children.end(), [&](std::unique_ptr<InstancedNode> const& current) {
+                return current.get() == project->selected_node;
+            });
+
+            if (it != parent->children.end()) {
+                parent->children.erase(it);
+                project->selected_node = nullptr;
+            }
         }
     }
 

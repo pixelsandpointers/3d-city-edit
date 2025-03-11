@@ -1,8 +1,6 @@
 #include "renderer/Shader.hpp"
 
-#include <fstream>
 #include <iostream>
-#include <sstream>
 
 /**
  * Implements basic texture mapping, computing
@@ -47,6 +45,16 @@ auto const albedo_source = ShaderSource{
                 discard;
             };
         })",
+
+    .uniform_caching_function = [](UniformLocations& locations, std::function<void(int&, char const*)> cache) {
+        cache(locations.model, "model");
+        cache(locations.view, "view");
+        cache(locations.projection, "projection");
+
+        cache(locations.texture_diffuse, "texture_diffuse");
+        cache(locations.texture_opacity, "texture_opacity");
+        cache(locations.gamma, "gamma");
+    },
 };
 
 /*
@@ -128,6 +136,23 @@ auto const lighting_source = ShaderSource{
                 discard;
             };
         })",
+
+    .uniform_caching_function = [](UniformLocations& locations, std::function<void(int&, char const*)> cache) {
+        cache(locations.model, "model");
+        cache(locations.view, "view");
+        cache(locations.projection, "projection");
+
+        cache(locations.texture_diffuse, "texture_diffuse");
+        cache(locations.texture_opacity, "texture_opacity");
+        cache(locations.light_direction, "light.direction");
+        cache(locations.light_color, "light.color");
+        cache(locations.light_power, "light.power");
+        cache(locations.camera_pos, "cameraPos");
+        cache(locations.ambient_strength, "ambientStrength");
+        cache(locations.specularity_factor, "specularityFactor");
+        cache(locations.shininess, "shininess");
+        cache(locations.gamma, "gamma");
+    },
 };
 
 // http://geoffprewett.com/blog/software/opengl-outline/
@@ -176,6 +201,12 @@ auto const post_process_outline_source = ShaderSource{
             FragColor = vec4(color, alpha);
         }
     )",
+
+    .uniform_caching_function = [](UniformLocations& locations, std::function<void(int&, char const*)> cache) {
+        cache(locations.tex, "tex");
+        cache(locations.color, "color");
+        cache(locations.gamma, "gamma");
+    },
 };
 
 auto const picking_source = ShaderSource{
@@ -207,6 +238,14 @@ auto const picking_source = ShaderSource{
         void main() {
             FragColor.r = id;
         })",
+
+    .uniform_caching_function = [](UniformLocations& locations, std::function<void(int&, char const*)> cache) {
+        cache(locations.model, "model");
+        cache(locations.view, "view");
+        cache(locations.projection, "projection");
+
+        cache(locations.id, "id");
+    },
 };
 
 Shader Shader::lighting;
@@ -234,6 +273,8 @@ Shader const& Shader::get_shader_for_mode(ViewingMode mode)
     case ViewingMode::RENDERED:
         shader = &Shader::lighting;
         break;
+    default:
+        std::abort();
     };
 
     assert(shader);
@@ -252,51 +293,15 @@ Shader::Shader(ShaderSource source)
     // Cleanup shaders as they are already linked into our program
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-}
 
-Shader::Shader(char const* vertex_path, char const* fragment_path)
-{
-    std::string vertex_code;
-    std::string fragment_code;
-    std::ifstream vertex_shader_file;
-    std::ifstream fragment_shader_file;
-
-    vertex_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    fragment_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-    try {
-        vertex_shader_file.open(vertex_path);
-        fragment_shader_file.open(fragment_path);
-        std::stringstream vertex_shader_stream, fragment_shader_stream;
-
-        vertex_shader_stream << vertex_shader_file.rdbuf();
-        fragment_shader_stream << fragment_shader_file.rdbuf();
-
-        vertex_shader_file.close();
-        fragment_shader_file.close();
-
-        vertex_code = vertex_shader_stream.str();
-        fragment_code = fragment_shader_stream.str();
-    } catch (std::ifstream::failure e) {
-        std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESS\n";
-    }
-
-    char const* vertex_source = vertex_code.c_str();
-    char const* fragment_source = fragment_code.c_str();
-
-    // Compile shaders and set up the shader program
-    auto const vertex_shader = compile_shader(ShadingStage::VERTEX, vertex_source);
-    auto const fragment_shader = compile_shader(ShadingStage::FRAGMENT, fragment_source);
-
-    link_shaders_to_program(vertex_shader, fragment_shader);
-
-    // Cleanup shaders as they are already linked into our program
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
+    source.uniform_caching_function(uniform_locations, [&](int& location, char const* name) {
+        location = glGetUniformLocation(m_id, name);
+    });
 }
 
 Shader::Shader(Shader&& old)
     : m_id{old.m_id}
+    , uniform_locations{old.uniform_locations}
 {
     old.m_id = 0;
 }
@@ -305,6 +310,7 @@ Shader& Shader::operator=(Shader&& other)
 {
     if (this != &other) {
         m_id = other.m_id;
+        uniform_locations = other.uniform_locations;
         other.m_id = 0;
     }
 
@@ -314,56 +320,6 @@ Shader& Shader::operator=(Shader&& other)
 void Shader::use() const
 {
     glUseProgram(m_id);
-}
-
-void Shader::set_bool(char const* name, bool value) const
-{
-    glUniform1i(glGetUniformLocation(m_id, name), static_cast<int>(value));
-}
-
-void Shader::set_int(char const* name, int value) const
-{
-    glUniform1i(glGetUniformLocation(m_id, name), value);
-}
-
-void Shader::set_uint(char const* name, unsigned int value) const
-{
-    glUniform1ui(glGetUniformLocation(m_id, name), value);
-}
-
-void Shader::set_float(char const* name, float value) const
-{
-    glUniform1f(glGetUniformLocation(m_id, name), value);
-}
-
-void Shader::set_mat2(char const* name, glm::mat2 const& matrix) const
-{
-    glUniformMatrix2fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, glm::value_ptr(matrix));
-}
-
-void Shader::set_mat3(char const* name, glm::mat3 const& matrix) const
-{
-    glUniformMatrix3fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, glm::value_ptr(matrix));
-}
-
-void Shader::set_mat4(char const* name, glm::mat4 const& matrix) const
-{
-    glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, glm::value_ptr(matrix));
-}
-
-void Shader::set_vec2(char const* name, glm::vec2 const& vector) const
-{
-    glUniform2fv(glGetUniformLocation(m_id, name), 1, glm::value_ptr(vector));
-}
-
-void Shader::set_vec3(char const* name, glm::vec3 const& vector) const
-{
-    glUniform3fv(glGetUniformLocation(m_id, name), 1, glm::value_ptr(vector));
-}
-
-void Shader::set_vec4(char const* name, glm::vec4 const& vector) const
-{
-    glUniform4fv(glGetUniformLocation(m_id, name), 1, glm::value_ptr(vector));
 }
 
 void Shader::check_compile_errors(unsigned int shader, ShadingStage stage) const

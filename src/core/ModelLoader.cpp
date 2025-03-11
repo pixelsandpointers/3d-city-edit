@@ -9,6 +9,7 @@
 #include <glad/glad.h>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
+#include <map>
 #include <vector>
 
 glm::vec3 ai_to_glm_vec(aiVector3D vector)
@@ -55,7 +56,7 @@ std::optional<std::filesystem::path> guess_texture_path(std::filesystem::path di
                 return optional_path.value();
             }
         }
-    } catch (std::exception const e) {
+    } catch (std::exception const& e) {
         std::cerr << "Failed to guess texture path: " << e.what() << "\n";
     }
     // Fail
@@ -229,13 +230,66 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
     auto location = NodeLocation::file(parent_location.file_path, parent_location.node_path / name);
     auto new_node = Node::create(name, new_transform, location);
 
+    std::map<std::pair<Texture const*, Texture const*>, Mesh> merged_meshes;
+
+    // This messy code transforms the vertices and the positions in such a way that the mesh vertices are built around the object center.
+    // This ensures that the gizmos aren't diplayed somewhere far away.
+    // It also merges meshes with identical textures to improve performance.
+
+    // 1. Load all meshes and compute the node's AABB
+    std::optional<AABB> aabb;
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        new_node.meshes.push_back(process_mesh(mesh, scene, directory));
+        auto new_mesh = process_mesh(mesh, scene, directory);
+        if (!aabb.has_value()) {
+            aabb = new_mesh.aabb;
+        } else {
+            aabb = aabb->merge(new_mesh.aabb);
+        }
+
+        auto key = std::make_pair(new_mesh.m_texture_diffuse, new_mesh.m_texture_opacity);
+        if (merged_meshes.contains(key)) {
+            auto& merged_mesh = merged_meshes.at(key);
+            auto start_index = merged_mesh.m_vertices.size();
+            for (auto index : new_mesh.m_indices) {
+                merged_mesh.m_indices.push_back(start_index + index);
+            }
+            merged_mesh.m_vertices.insert(merged_mesh.m_vertices.end(), new_mesh.m_vertices.begin(), new_mesh.m_vertices.end());
+        } else {
+            merged_meshes.emplace(key, std::move(new_mesh));
+        }
     }
+
+    // 2. Compute the offset to the center in local space
+    auto center = glm::vec3{0.0f};
+    if (aabb.has_value()) {
+        center = glm::vec3{
+            aabb->min.x + (aabb->max.x - aabb->min.x) / 2,
+            aabb->min.y + (aabb->max.y - aabb->min.y) / 2,
+            aabb->min.z + (aabb->max.z - aabb->min.z) / 2,
+        };
+    }
+
+    // 3. Move vertices, setup mesh buffers and add the meshes to the node
+    for (auto& [_, mesh] : merged_meshes) {
+        for (auto& vertex : mesh.m_vertices) {
+            vertex.m_position -= center;
+        }
+        mesh.aabb.min -= center;
+        mesh.aabb.max -= center;
+        mesh.setup_mesh();
+        new_node.meshes.push_back(std::move(mesh));
+    }
+
+    // 4. Load and move the child nodes
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        new_node.children.push_back(process_node(node->mChildren[i], scene, directory, location));
+        auto new_child = process_node(node->mChildren[i], scene, directory, location);
+        new_child.transform.position -= center;
+        new_node.children.push_back(std::move(new_child));
     }
+
+    // 5. Move own position
+    new_node.transform.position = glm::vec3{new_node.transform.get_local_matrix() * glm::vec4{center, 1.0f}};
 
     return new_node;
 }

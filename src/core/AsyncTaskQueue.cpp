@@ -80,6 +80,7 @@ void AsyncTaskQueue::push_task(std::function<void()> task)
     {
         auto lock = std::lock_guard<std::mutex>{m_queue_mutex};
         m_queue.push(std::move(task));
+        ++m_total_queued_tasks;
     }
 
     m_convar.notify_one();
@@ -94,4 +95,16 @@ void AsyncTaskQueue::close()
 bool AsyncTaskQueue::is_open()
 {
     return m_is_open;
+}
+
+std::size_t AsyncTaskQueue::num_queued_tasks()
+{
+    auto lock = std::lock_guard<std::mutex>{m_queue_mutex};
+    return m_queue.size();
+}
+
+std::size_t AsyncTaskQueue::num_total_queued_tasks()
+{
+    auto lock = std::lock_guard<std::mutex>{m_queue_mutex};
+    return m_total_queued_tasks;
 }

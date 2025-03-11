@@ -123,7 +123,7 @@ Texture const* Project::get_texture(std::filesystem::path path)
         return &m_textures.at(path);
     }
 
-    m_textures.emplace(path, Texture::fallback_placeholder(m_fallback_texture.m_id));
+    m_textures.emplace(path, Texture::fallback_placeholder(m_fallback_texture.id));
     auto* texture = &m_textures.at(path);
 
     if (!texture) {
@@ -132,13 +132,16 @@ Texture const* Project::get_texture(std::filesystem::path path)
 
     AsyncTaskQueue::background.push_task([path, texture]() {
         auto new_image = Image::load_from_file(path.string().c_str());
-        if (!new_image.has_value()) {
-            return;
-        }
 
-        AsyncTaskQueue::main.push_task([texture, path, new_image = std::move(new_image.value())]() mutable {
-            auto new_texture = Texture::load_from_image(std::move(new_image));
+        AsyncTaskQueue::main.push_task([texture, path, new_image = std::move(new_image)]() mutable {
+            if (!new_image.has_value()) {
+                texture->is_loaded = true;
+                return;
+            }
+
+            auto new_texture = Texture::load_from_image(std::move(new_image.value()));
             if (!new_texture.has_value()) {
+                texture->is_loaded = true;
                 return;
             }
 

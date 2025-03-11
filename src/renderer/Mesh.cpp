@@ -8,42 +8,40 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Text
     , m_texture_diffuse(texture_diffuse)
     , m_texture_opacity(texture_opacity)
     , aabb(aabb)
-{
-    setup_mesh();
-}
+{ }
 
 void Mesh::draw() const
 {
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
 }
 
 void Mesh::draw(ViewingMode mode) const
 {
     auto const& shader = Shader::get_shader_for_mode(mode);
-    auto diffuse_texture_id = mode == ViewingMode::SOLID ? Project::get_current()->fallback_texture()->m_id : m_texture_diffuse->m_id;
+    auto diffuse_texture_id = mode == ViewingMode::SOLID ? Project::get_current()->fallback_texture()->id : m_texture_diffuse->id;
 
     // set diffuse texture
     glActiveTexture(GL_TEXTURE0);
-    shader.set_int("texture_diffuse", 0);
+    shader.set_uniform(shader.uniform_locations.texture_diffuse, 0);
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_id);
 
     // set opacity texture
     glActiveTexture(GL_TEXTURE1);
-    shader.set_int("texture_opacity", 1);
-    glBindTexture(GL_TEXTURE_2D, m_texture_opacity->m_id);
+    shader.set_uniform(shader.uniform_locations.texture_opacity, 1);
+    glBindTexture(GL_TEXTURE_2D, m_texture_opacity->id);
 
     // set active
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(m_indices.size()), GL_UNSIGNED_INT, nullptr);
-    // unbind VAO
-    glBindVertexArray(0);
-    glActiveTexture(GL_TEXTURE0);
 }
 
 void Mesh::setup_mesh()
 {
+    if (m_vao != 0) {
+        return;
+    }
+
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ebo);

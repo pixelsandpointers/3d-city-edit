@@ -33,6 +33,9 @@ struct InstancedNode {
     std::vector<std::unique_ptr<InstancedNode>> children;
     std::string name;
 
+    static unsigned int counter;
+    unsigned int const id{counter++};
+
     void traverse(std::function<void(glm::mat4, Node const&)>) const;
     void compute_transforms(glm::mat4 = glm::mat4{1.0f});
 

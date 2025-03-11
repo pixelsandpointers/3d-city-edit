@@ -23,11 +23,14 @@ std::optional<Image> Image::load_from_file(char const* path)
         return {};
     }
 
+    auto data_vector = std::vector<unsigned char>(data, data + n_components * width * height);
+    stbi_image_free(data);
+
     return Image{
         .width = width,
         .height = height,
         .channels = n_components,
-        .data = std::vector<unsigned char>(data, data + n_components * width * height),
+        .data = std::move(data_vector),
     };
 }
 
@@ -95,25 +98,27 @@ ColorTexture Texture::single_color(glm::vec4 color)
 }
 
 Texture::Texture(Texture&& other)
-    : m_id{other.m_id}
+    : id{other.id}
     , width{other.width}
     , height{other.height}
     , channels{other.channels}
+    , is_loaded{other.is_loaded}
 {
     // Important: Destructor will be called after move!
-    other.m_id = 0;
+    other.id = 0;
 }
 
 Texture& Texture::operator=(Texture&& other)
 {
     if (this != &other) {
-        m_id = other.m_id;
+        id = other.id;
         width = other.width;
         height = other.height;
         channels = other.channels;
+        is_loaded = other.is_loaded;
 
         // Important: Destructor will be called after move!
-        other.m_id = 0;
+        other.id = 0;
     }
 
     return *this;
@@ -121,13 +126,13 @@ Texture& Texture::operator=(Texture&& other)
 
 Texture::~Texture()
 {
-    if (is_loaded && m_id != 0) {
-        glDeleteTextures(1, &m_id);
+    if (is_loaded && id != 0) {
+        glDeleteTextures(1, &id);
     }
 }
 
 Texture::Texture(unsigned int m_id, int width, int height, int channels, bool is_loaded)
-    : m_id{m_id}
+    : id{m_id}
     , width{width}
     , height{height}
     , channels{channels}
@@ -142,7 +147,7 @@ glm::vec4 ColorTexture::color()
 void ColorTexture::color(glm::vec4 color)
 {
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_id);
+    glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(color));
     m_color = color;
 }

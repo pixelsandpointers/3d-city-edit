@@ -15,7 +15,6 @@ struct Viewport {
     GizmoOperation gizmo_operation{GizmoOperation::TRANSLATE};
 
     Viewport();
-    // TODO: Move the shader stuff to some config (maybe as Project::config?) and remove the SettingsPane parameter.
     void render(double delta_time);
 
 private:

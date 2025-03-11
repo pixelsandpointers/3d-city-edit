@@ -51,6 +51,7 @@ public:
     Texture const* white_texture() const;
 
 private:
+    friend struct Performance;
     static std::unique_ptr<Project> current;
 
     ColorTexture m_fallback_texture{ColorTexture::single_color(glm::vec4{1.0f})};

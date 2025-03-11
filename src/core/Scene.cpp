@@ -2,6 +2,8 @@
 
 #include <glm/ext/matrix_transform.hpp>
 
+unsigned int InstancedNode::counter = 0;
+
 glm::mat4 Transform::get_local_matrix() const
 {
     auto matrix = glm::mat4{1.0f};

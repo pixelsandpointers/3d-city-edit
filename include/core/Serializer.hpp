@@ -22,24 +22,19 @@ private:
     Project& m_project;
 
     [[nodiscard]] nlohmann::json serialize(InstancedNode const&) const;
-    [[nodiscard]] nlohmann::json serialize(glm::vec3 const&) const;
-    [[nodiscard]] nlohmann::json serialize(glm::vec4 const&) const;
-    [[nodiscard]] nlohmann::json serialize(glm::quat const&) const;
     [[nodiscard]] nlohmann::json serialize(Config const&) const;
     [[nodiscard]] nlohmann::json serialize(Uniforms const&) const;
 
-    template <class T>
-    T deserialize(nlohmann::json&) const;
-    template <>
-    std::unique_ptr<InstancedNode> deserialize(nlohmann::json& source) const;
-    template <>
-    glm::vec3 deserialize(nlohmann::json& source) const;
-    template <>
-    glm::vec4 deserialize(nlohmann::json& source) const;
-    template <>
-    glm::quat deserialize(nlohmann::json& source) const;
-    template <>
-    Config deserialize(nlohmann::json& source) const;
-    template <>
-    Uniforms deserialize(nlohmann::json& source) const;
+    std::unique_ptr<InstancedNode> deserialize_unique_ptr_instancednode(nlohmann::json& source) const;
+    Config deserialize_config(nlohmann::json& source) const;
+    Uniforms deserialize_uniforms(nlohmann::json& source) const;
 };
+
+namespace glm {
+    void to_json(nlohmann::json& j, vec3 const& v);
+    void from_json(nlohmann::json const& j, vec3& v);
+    void to_json(nlohmann::json& j, vec4 const& v);
+    void from_json(nlohmann::json const& j, vec4& v);
+    void to_json(nlohmann::json& j, quat const& q);
+    void from_json(nlohmann::json const& j, quat& v);
+}

@@ -37,8 +37,8 @@ public:
     void draw() const;
     void draw(ViewingMode) const;
     [[nodiscard]] bool is_fully_loaded() const;
+    void setup_mesh();
 
 private:
-    unsigned int m_vao, m_vbo, m_ebo;
-    void setup_mesh();
+    unsigned int m_vao{0}, m_vbo{0}, m_ebo{0};
 };

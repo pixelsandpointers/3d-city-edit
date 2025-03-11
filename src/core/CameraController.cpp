@@ -143,7 +143,7 @@ void CameraController::update_unity(float delta_time, bool handle_scroll)
         auto movement_scalar = movement_speed * delta_time;
 
         if (Input::key_pressed(GLFW_KEY_LEFT_SHIFT)) {
-            movement_scalar *= 2;
+            movement_scalar *= 4;
         }
 
         if (Input::key_pressed(GLFW_KEY_W)) {
