@@ -55,7 +55,7 @@ public:
     glm::vec3 position;
     glm::vec3 target;
     glm::vec3 up{0.0f, 1.0f, 0.0f};
-    float near{100.0f};
+    float near{10.0f};
     float far{100000.0f};
 
     // Vertical FOV in radians
