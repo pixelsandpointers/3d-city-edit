@@ -1,5 +1,6 @@
 #include "ui/ObjectDetails.hpp"
 #include "core/Project.hpp"
+#include "ui/Viewport.hpp"
 #include <imgui.h>
 #include <string>
 
@@ -49,7 +50,7 @@ void reset_instance_transform(InstancedNode* node)
 
 char object_label[128] = {""};
 
-void ObjectDetails::render()
+void ObjectDetails::render(CameraController& camera_controller)
 {
     auto transform_changed = false;
     auto project = Project::get_current();
@@ -125,6 +126,11 @@ void ObjectDetails::render()
         }
         if (ImGui::Button("Reset")) {
             ImGui::OpenPopup("reset_mode");
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Focus Camera [F]")) {
+            camera_controller.focus_on(*project->selected_node);
         }
     }
 

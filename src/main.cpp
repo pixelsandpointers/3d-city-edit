@@ -172,7 +172,7 @@ int main()
 
         setup_dock_builder(); // create docking layout before components are rendered
 
-        object_details_pane.render();
+        object_details_pane.render(viewport_window.camera_controller());
         object_selection_tree.render();
         asset_browser.render();
         settings_pane.render();

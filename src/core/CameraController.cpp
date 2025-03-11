@@ -10,8 +10,17 @@ CameraController::CameraController(Type type, glm::vec3 camera_position)
     camera = std::make_unique<Camera>(camera_position, camera_position + direction);
 }
 
-void CameraController::update(float delta_time, bool handle_scroll)
+void CameraController::update(float delta_time, bool handle_input, bool handle_scroll)
 {
+    if (m_animation.active) {
+        update_animation(delta_time);
+        return;
+    }
+
+    if (!handle_input) {
+        return;
+    }
+
     switch (type) {
     case Type::FREECAM:
         update_freecam(delta_time, handle_scroll);
@@ -23,6 +32,71 @@ void CameraController::update(float delta_time, bool handle_scroll)
         update_unity(delta_time, handle_scroll);
         break;
     }
+}
+
+void CameraController::animate_to(glm::vec3 position, glm::vec3 target, float duration)
+{
+    m_animation.active = true;
+    m_animation.position = position;
+    m_animation.target = target;
+    m_animation.remaining_time = duration;
+}
+
+void CameraController::focus_on(InstancedNode const& node)
+{
+    auto const duration = 0.3f;
+
+    auto const world_center = glm::vec3{node.model_matrix * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f}};
+    auto radius = 0.0f;
+    node.traverse([&](glm::mat4 model_matrix, Node const& node) {
+        for (auto const& mesh : node.meshes) {
+            auto const world_aabb_min = model_matrix * glm::vec4{mesh.aabb.min, 1.0f};
+            auto const world_aabb_max = model_matrix * glm::vec4{mesh.aabb.max, 1.0f};
+            radius = std::max(radius, std::abs(world_center.x - world_aabb_min.x));
+            radius = std::max(radius, std::abs(world_center.y - world_aabb_min.y));
+            radius = std::max(radius, std::abs(world_center.z - world_aabb_min.z));
+            radius = std::max(radius, std::abs(world_center.x - world_aabb_max.x));
+            radius = std::max(radius, std::abs(world_center.y - world_aabb_max.y));
+            radius = std::max(radius, std::abs(world_center.z - world_aabb_max.z));
+        }
+    });
+
+    if (radius < 0.1f) {
+        return;
+    }
+
+    auto const distance = radius * 1.5f;
+
+    auto const look_direction = glm::normalize(camera->target - camera->position);
+
+    switch (type) {
+    case Type::FREECAM:
+    case Type::UNITY: {
+        auto const target_position = world_center - look_direction * distance;
+        animate_to(target_position, target_position + look_direction, duration);
+        break;
+    }
+    case Type::BLENDER: {
+    }
+        animate_to(world_center - look_direction * distance, world_center, duration);
+    }
+}
+
+void CameraController::update_animation(float delta_time)
+{
+    if (!m_animation.active) {
+        return;
+    }
+
+    auto factor = delta_time / m_animation.remaining_time;
+    m_animation.remaining_time -= delta_time;
+    if (factor >= 1.0f) {
+        factor = 1.0f;
+        m_animation.active = false;
+    }
+
+    camera->target = factor * m_animation.target + (1 - factor) * camera->target;
+    camera->position = factor * m_animation.position + (1 - factor) * camera->position;
 }
 
 std::pair<float, float> direction_to_yaw_pitch(glm::vec3 direction)
