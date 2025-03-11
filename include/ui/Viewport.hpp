@@ -17,6 +17,8 @@ struct Viewport {
     Viewport();
     void render(double delta_time);
 
+    CameraController& camera_controller() { return m_camera_controller; }
+
 private:
     Framebuffer m_framebuffer;
     Framebuffer m_blitted_framebuffer;

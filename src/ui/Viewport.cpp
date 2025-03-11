@@ -35,9 +35,7 @@ void Viewport::render(double delta_time)
         m_camera_controller.camera->position = config.camera_position;
         m_camera_controller.camera->target = config.camera_target;
 
-        if (ImGui::IsWindowFocused()) {
-            m_camera_controller.update(delta_time, ImGui::IsWindowHovered());
-        }
+        m_camera_controller.update(delta_time, ImGui::IsWindowFocused(), ImGui::IsWindowHovered());
 
         auto size = ImGui::GetContentRegionAvail();
         if (size.x != m_framebuffer.width || size.y != m_framebuffer.height) {
@@ -210,6 +208,10 @@ void Viewport::render(double delta_time)
                 parent->children.erase(it);
                 project->selected_node = nullptr;
             }
+        }
+
+        if (ImGui::IsWindowFocused() && project->selected_node && ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+            m_camera_controller.focus_on(*project->selected_node);
         }
     }
 

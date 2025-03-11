@@ -1,6 +1,10 @@
 #pragma once
 
+struct CameraController;
+
 struct ObjectDetails {
     ObjectDetails();
-    void render();
+
+    // FIXME: Avoid passing the camera controller to this function
+    void render(CameraController&);
 };
