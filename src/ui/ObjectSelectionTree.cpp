@@ -46,13 +46,13 @@ void ObjectSelectionTree::traverse_nodes(InstancedNode& root)
             ? ImGuiTreeNodeFlags_Selected
             : ImGuiTreeNodeFlags_None;
 
-        auto const treenode_label = child->name + "##node_" + std::to_string(child->id);
-
+        ImGui::PushID(child->id);
         if (!child->children.empty()) {
-            open = ImGui::TreeNodeEx(treenode_label.c_str(), flags_selected);
+            open = ImGui::TreeNodeEx(child->name.c_str(), flags_selected);
         } else {
-            ImGui::TreeNodeEx(treenode_label.c_str(), imgui_treenode_leaf_flags | flags_selected);
+            ImGui::TreeNodeEx(child->name.c_str(), imgui_treenode_leaf_flags | flags_selected);
         }
+        ImGui::PopID();
 
         // Drag InstancedNode
         if (ImGui::BeginDragDropSource()) {
