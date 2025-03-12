@@ -27,7 +27,7 @@ struct InstancedNode {
     Transform transform;
 
     // Can be nullptr!
-    Node const* node;
+    Node const* node{nullptr};
 
     glm::mat4 model_matrix{0.0f};
     std::vector<std::unique_ptr<InstancedNode>> children;

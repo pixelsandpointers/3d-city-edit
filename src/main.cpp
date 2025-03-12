@@ -20,6 +20,7 @@
 #include <iostream>
 
 auto framebuffer = Framebuffer::get_default(1920, 1080);
+auto focus_on_scene = false;
 
 void glfw_error_callback([[maybe_unused]] int error, char const* description)
 {
@@ -53,7 +54,7 @@ void setup_dock_builder()
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -102,40 +103,37 @@ int main()
     Input::init(window);
     AsyncTaskQueue::init();
 
-    // assuming we set the CWD to root
-    // TODO: Replace with some kind of "Open Project" dialog
-    auto path = std::filesystem::current_path() / "assets";
-    std::cout << path.string().c_str() << std::endl;
-    Project::load(path);
+    auto input_path = std::filesystem::current_path();
+
+    if (argc == 2) {
+        input_path = std::filesystem::path{argv[1]};
+        if (input_path.is_relative()) {
+            input_path = std::filesystem::canonical(std::filesystem::current_path() / input_path);
+        }
+    }
+
+    if (std::filesystem::is_directory(input_path)) {
+        auto project = Project::load(input_path);
+        if (!project->scene) {
+            project->scene = std::make_unique<InstancedNode>();
+        }
+    } else if (std::filesystem::is_regular_file(input_path)) {
+        auto project = Project::load(std::filesystem::current_path());
+        if (!project->scene) {
+            project->scene = std::make_unique<InstancedNode>();
+            auto obj = project->get_model(input_path);
+            if (obj) {
+                project->scene->children.push_back(obj->instantiate());
+                focus_on_scene = true;
+            }
+        }
+    }
+
+    // TODO: Add with some kind of "Open Project" dialog
 
     auto project = Project::get_current();
 
-    // Instanciate the object if it didn't get loaded
-    // TODO: Remove when objects can be added at runtime
-
-    // This is just some temporary workaround
-    auto root_transform = Transform{
-        .position = glm::vec3{0.0f, -15000.0f, -4000.0f},
-        .orientation = glm::vec3{0.0f},
-        .scale = glm::vec3{1.0f},
-    };
-
-    auto scene = Node::create("scene", root_transform, NodeLocation::empty());
-
-    if (!project->scene) {
-        auto model_path = path / "Models/TUD_Innenstadt.FBX";
-        auto obj = project->get_model(model_path);
-
-        if (!obj) {
-            std::abort();
-        }
-
-        scene.children.push_back(*obj);
-
-        project->scene = scene.instantiate();
-    }
-
-    if (!project->scene) {
+    if (!project || !project->scene) {
         std::abort();
     }
 
@@ -182,6 +180,11 @@ int main()
 #if defined(_DEBUG) or not defined(NDEBUG)
         performance_window.render(delta_time);
 #endif
+
+        if (focus_on_scene) {
+            focus_on_scene = false;
+            viewport_window.camera_controller().focus_on(*project->scene);
+        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
