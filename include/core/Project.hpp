@@ -36,7 +36,7 @@ public:
     Config config;
 
     static Project* get_current();
-    static void load(std::filesystem::path);
+    static Project* load(std::filesystem::path);
     void store();
 
     FSCacheNode* get_fs_cache();

@@ -51,7 +51,7 @@ Project* Project::get_current()
     return current.get();
 }
 
-void Project::load(std::filesystem::path path)
+Project* Project::load(std::filesystem::path path)
 {
     // Ugly workaround for `std::make_unique` not being able to access private constructors
     current = std::unique_ptr<Project>(new Project(path));
@@ -77,6 +77,8 @@ void Project::load(std::filesystem::path path)
     } catch (std::exception const& e) {
         std::cerr << e.what() << "\n";
     }
+
+    return current.get();
 }
 
 Project::Project(std::filesystem::path root)
