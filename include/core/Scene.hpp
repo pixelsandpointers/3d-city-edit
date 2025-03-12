@@ -11,9 +11,9 @@ class Mesh;
 struct Node;
 
 struct Transform {
-    glm::vec3 position;
+    glm::vec3 position{0.0f};
     glm::quat orientation;
-    glm::vec3 scale;
+    glm::vec3 scale{1.0f};
 
     [[nodiscard]] glm::mat4 get_local_matrix() const;
     [[nodiscard]] glm::vec3 orientation_euler() const;
