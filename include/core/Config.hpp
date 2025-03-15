@@ -12,6 +12,7 @@ struct Config {
     float fov{glm::radians(90.0f)}; // Vertical fov in radians
     float near{10.0f};
     float far{100000.0f};
+    glm::vec3 sky_color{0.0f};
 
     // camera
     CameraController::Type camera_controller_type{CameraController::Type::UNITY};
