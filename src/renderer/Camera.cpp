@@ -155,7 +155,12 @@ void Camera::draw(ViewingMode mode,
     shader.use();
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
+
+    auto& sky_color = Project::get_current()->config.sky_color;
+    glClearColor(sky_color.r, sky_color.g, sky_color.b, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
     glViewport(0, 0, framebuffer.width, framebuffer.height);
 
     // view/projection transformations
