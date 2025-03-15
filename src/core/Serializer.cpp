@@ -61,6 +61,7 @@ nlohmann::json Serializer::serialize(Config const& source) const
     target["fov"] = source.fov;
     target["near"] = source.near;
     target["far"] = source.far;
+    target["sky_color"] = source.sky_color;
     target["camera_controller_type"] = source.camera_controller_type;
     target["movement_speed"] = source.movement_speed;
     target["rotation_speed"] = source.rotation_speed;
@@ -129,6 +130,7 @@ Config Serializer::deserialize_config(nlohmann::json& source) const
         .fov = source["fov"],
         .near = source["near"],
         .far = source["far"],
+        .sky_color = source["sky_color"],
         .camera_controller_type = source["camera_controller_type"],
         .movement_speed = source["movement_speed"],
         .rotation_speed = source["rotation_speed"],
