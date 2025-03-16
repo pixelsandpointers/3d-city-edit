@@ -374,6 +374,11 @@ void Project::rebuild_fs_cache()
 
 void Project::update(double current_time)
 {
+    if (config.fallback_color != glm::vec3{m_fallback_texture.color()}) {
+        m_fallback_texture.color(glm::vec4{config.fallback_color, 1.0f});
+    }
+
+    // Update every 5 seconds
     auto const update_interval = 5.0;
     if (current_time - m_fs_cache_last_updated < update_interval) {
         return;
@@ -391,10 +396,6 @@ void Project::update(double current_time)
             rebuild_fs_cache();
         });
     });
-
-    if (config.fallback_color != glm::vec3{m_fallback_texture.color()}) {
-        m_fallback_texture.color(glm::vec4{config.fallback_color, 1.0f});
-    }
 }
 
 Texture const* Project::fallback_texture() const
