@@ -202,8 +202,9 @@ void Camera::draw_outline(Framebuffer const& framebuffer, InstancedNode const& n
     Shader::albedo.set_uniform(Shader::albedo.uniform_locations.gamma, 1.0f);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, project->white_texture()->id);
-    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.texture_diffuse, 0);
-    Shader::albedo.set_uniform(Shader::albedo.uniform_locations.texture_opacity, 0);
+    for (std::size_t i = 0; i < sizeof(Shader::albedo.uniform_locations.textures) / sizeof(Shader::albedo.uniform_locations.textures[0]); ++i) {
+        Shader::albedo.set_uniform(Shader::albedo.uniform_locations.textures[i], 0);
+    }
 
     node.traverse([&](auto transform_matrix, auto const& node_data) {
         Shader::albedo.set_uniform(Shader::albedo.uniform_locations.model, transform_matrix);

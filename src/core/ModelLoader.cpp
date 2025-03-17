@@ -9,7 +9,6 @@
 #include <glad/glad.h>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
-#include <map>
 #include <vector>
 
 glm::vec3 ai_to_glm_vec(aiVector3D vector)
@@ -145,7 +144,7 @@ Texture const* load_mask_texture(aiMaterial* mat, std::filesystem::path director
     }
 }
 
-Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path directory)
+IntermediateMesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path directory)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -176,6 +175,9 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
             vertex.m_tex_coords = {0.0f, 0.0f};
         }
 
+        // diffuse: 0; opacity: 1
+        vertex.texture_indices = 0x00010000;
+
         vertices.push_back(vertex);
 
         // if you want to add more attributes do it here
@@ -191,25 +193,26 @@ Mesh process_mesh(aiMesh* mesh, aiScene const* scene, std::filesystem::path dire
     // assign materials if any
     auto material = scene->mMaterials[mesh->mMaterialIndex];
 
+    std::vector<Texture const*> textures;
+
     auto texture_diffuse = load_material_texture(material, aiTextureType_DIFFUSE, directory);
     if (!texture_diffuse) {
         texture_diffuse = Project::get_current()->fallback_texture();
     }
+    textures.push_back(texture_diffuse);
 
-    // TODO: Find mask texture
-    // Each texture has a <texture name>.meta file that includes a guid
-    // And each material has a list of linked textures that include a base and mask texture guid
     auto texture_opacity = load_mask_texture(material, directory);
     if (!texture_opacity) {
         texture_opacity = Project::get_current()->white_texture();
     }
+    textures.push_back(texture_opacity);
 
     auto aabb = AABB{
         .min = ai_to_glm_vec(mesh->mAABB.mMin),
         .max = ai_to_glm_vec(mesh->mAABB.mMax),
     };
 
-    return Mesh{vertices, indices, texture_diffuse, texture_opacity, aabb};
+    return IntermediateMesh{vertices, indices, textures, aabb};
 }
 
 Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path directory, NodeLocation parent_location)
@@ -230,13 +233,13 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
     auto location = NodeLocation::file(parent_location.file_path, parent_location.node_path / name);
     auto new_node = Node::create(name, new_transform, location);
 
-    std::map<std::pair<Texture const*, Texture const*>, Mesh> merged_meshes;
+    std::vector<IntermediateMesh> merged_meshes;
 
     // This messy code transforms the vertices and the positions in such a way that the mesh vertices are built around the object center.
     // This ensures that the gizmos aren't diplayed somewhere far away.
-    // It also merges meshes with identical textures to improve performance.
+    // It also merges meshes to improve performance.
 
-    // 1. Load all meshes and compute the node's AABB
+    // 1. Load and merge all meshes and compute the node's AABB
     std::optional<AABB> aabb;
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -247,16 +250,8 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
             aabb = aabb->merge(new_mesh.aabb);
         }
 
-        auto key = std::make_pair(new_mesh.m_texture_diffuse, new_mesh.m_texture_opacity);
-        if (merged_meshes.contains(key)) {
-            auto& merged_mesh = merged_meshes.at(key);
-            auto start_index = merged_mesh.m_vertices.size();
-            for (auto index : new_mesh.m_indices) {
-                merged_mesh.m_indices.push_back(start_index + index);
-            }
-            merged_mesh.m_vertices.insert(merged_mesh.m_vertices.end(), new_mesh.m_vertices.begin(), new_mesh.m_vertices.end());
-        } else {
-            merged_meshes.emplace(key, std::move(new_mesh));
+        if (merged_meshes.size() == 0 || !merged_meshes.back().merge(new_mesh)) {
+            merged_meshes.push_back(new_mesh);
         }
     }
 
@@ -271,14 +266,13 @@ Node process_node(aiNode* node, aiScene const* scene, std::filesystem::path dire
     }
 
     // 3. Move vertices, setup mesh buffers and add the meshes to the node
-    for (auto& [_, mesh] : merged_meshes) {
-        for (auto& vertex : mesh.m_vertices) {
+    for (auto& mesh : merged_meshes) {
+        for (auto& vertex : mesh.vertices) {
             vertex.m_position -= center;
         }
         mesh.aabb.min -= center;
         mesh.aabb.max -= center;
-        mesh.setup_mesh();
-        new_node.meshes.push_back(std::move(mesh));
+        new_node.meshes.push_back(mesh);
     }
 
     // 4. Load and move the child nodes

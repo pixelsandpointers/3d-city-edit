@@ -54,7 +54,7 @@ struct UniformLocations {
     int projection{-1};
 
     // Fragment
-    int texture_diffuse{-1};
+    int textures[16]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     int texture_opacity{-1};
     int light_direction{-1};
     int light_color{-1};

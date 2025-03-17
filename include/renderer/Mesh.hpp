@@ -11,6 +11,10 @@ struct Vertex {
     glm::vec3 m_position;
     glm::vec3 m_normal;
     glm::vec2 m_tex_coords;
+
+    // first byte diffuse
+    // second byte opacity
+    uint32_t texture_indices;
 };
 
 struct AABB {
@@ -20,25 +24,28 @@ struct AABB {
     AABB merge(AABB const&);
 };
 
-class Mesh {
-public:
-    std::vector<Vertex> m_vertices;
-    std::vector<unsigned int> m_indices;
-    Texture const* m_texture_diffuse;
-    Texture const* m_texture_opacity;
+struct IntermediateMesh {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture const*> textures;
     AABB aabb;
 
-    Mesh(std::vector<Vertex> vertices,
-        std::vector<unsigned int> indices,
-        Texture const* texture_diffuse,
-        Texture const* texture_opacity,
-        AABB);
+    bool merge(IntermediateMesh const&);
+};
+
+class Mesh {
+public:
+    std::vector<Texture const*> textures;
+    AABB aabb;
+
+    Mesh(IntermediateMesh);
 
     void draw() const;
     void draw(ViewingMode) const;
     [[nodiscard]] bool is_fully_loaded() const;
-    void setup_mesh();
+    void setup_mesh(std::vector<Vertex> const& vertices, std::vector<unsigned int> const& indices);
 
 private:
     unsigned int m_vao{0}, m_vbo{0}, m_ebo{0};
+    unsigned int m_indices_size;
 };

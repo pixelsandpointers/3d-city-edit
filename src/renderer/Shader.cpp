@@ -1,6 +1,7 @@
 #include "renderer/Shader.hpp"
 
 #include <iostream>
+#include <string>
 
 /**
  * Implements basic texture mapping, computing
@@ -13,8 +14,11 @@ auto const albedo_source = ShaderSource{
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aNormal;
         layout (location = 2) in vec2 aTexCoords;
+        layout (location = 3) in uint aTexIndex;
 
         out vec2 TexCoords;
+        flat out uint diffuse_index;
+        flat out uint opacity_index;
 
         uniform mat4 model;
         uniform mat4 view;
@@ -22,6 +26,8 @@ auto const albedo_source = ShaderSource{
 
         void main() {
             TexCoords = aTexCoords;
+            diffuse_index = aTexIndex >> 24;
+            opacity_index = (aTexIndex >> 16) & 0xff;
             gl_Position = projection * view * model * vec4(aPos, 1.0);
         })",
 
@@ -29,18 +35,19 @@ auto const albedo_source = ShaderSource{
         #version 410 core
         out vec4 FragColor;
         in vec2 TexCoords;
+        flat in uint diffuse_index;
+        flat in uint opacity_index;
         in vec4 gl_FragCoord;
 
-        uniform sampler2D texture_diffuse;
-        uniform sampler2D texture_opacity;
+        uniform sampler2D textures[16];
         uniform float gamma;
 
         void main() {
-            vec3 color = texture(texture_diffuse, TexCoords).rgb;
+            vec3 color = texture(textures[diffuse_index], TexCoords).rgb;
             vec3 gammaCorrection = pow(color, vec3(1. / gamma));
             FragColor = vec4(gammaCorrection, 1.0f);
 
-            float alpha = texture(texture_opacity, TexCoords).r;
+            float alpha = texture(textures[opacity_index], TexCoords).r;
             if (alpha <= 0.01f) {
                 discard;
             };
@@ -51,8 +58,9 @@ auto const albedo_source = ShaderSource{
         cache(locations.view, "view");
         cache(locations.projection, "projection");
 
-        cache(locations.texture_diffuse, "texture_diffuse");
-        cache(locations.texture_opacity, "texture_opacity");
+        for (std::size_t i = 0; i < 16; ++i) {
+            cache(locations.textures[i], std::string{"textures[" + std::to_string(i) + "]"}.c_str());
+        }
         cache(locations.gamma, "gamma");
     },
 };
@@ -68,6 +76,7 @@ auto const lighting_source = ShaderSource{
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aNormal;
         layout (location = 2) in vec2 aTexCoords;
+        layout (location = 3) in uint aTexIndex;
 
         uniform mat4 model;
         uniform mat4 view;
@@ -76,11 +85,15 @@ auto const lighting_source = ShaderSource{
         out vec3 FragPos;
         out vec3 Normal;
         out vec2 TexCoords;
+        flat out uint diffuse_index;
+        flat out uint opacity_index;
 
         void main() {
             FragPos = vec3(model * vec4(aPos, 1.0));
             Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
             TexCoords = aTexCoords;
+            diffuse_index = aTexIndex >> 24;
+            opacity_index = (aTexIndex >> 16) & 0xff;
             gl_Position = projection * view * vec4(FragPos, 1.0);
         })",
 
@@ -95,10 +108,11 @@ auto const lighting_source = ShaderSource{
         in vec3 FragPos;
         in vec3 Normal;
         in vec2 TexCoords;
+        flat in uint diffuse_index;
+        flat in uint opacity_index;
         in vec4 gl_FragCoord;
 
-        uniform sampler2D texture_diffuse;
-        uniform sampler2D texture_opacity;
+        uniform sampler2D textures[16];
         uniform Light light;
         uniform vec3 cameraPos;
         uniform float ambientStrength;
@@ -109,7 +123,7 @@ auto const lighting_source = ShaderSource{
         out vec4 FragColor;
 
         void main() {
-            vec3 tex = texture(texture_diffuse, TexCoords).rgb;
+            vec3 tex = texture(textures[diffuse_index], TexCoords).rgb;
             vec3 normal = normalize(Normal);
             vec3 lightDir = normalize(-light.direction);
 
@@ -131,7 +145,7 @@ auto const lighting_source = ShaderSource{
             vec3 gammaCorrection = pow(color, vec3(1. / gamma));
             FragColor = vec4(gammaCorrection, 1.0f);
 
-            float alpha = texture(texture_opacity, TexCoords).r;
+            float alpha = texture(textures[opacity_index], TexCoords).r;
             if (alpha <= 0.01f) {
                 discard;
             };
@@ -142,7 +156,9 @@ auto const lighting_source = ShaderSource{
         cache(locations.view, "view");
         cache(locations.projection, "projection");
 
-        cache(locations.texture_diffuse, "texture_diffuse");
+        for (std::size_t i = 0; i < 16; ++i) {
+            cache(locations.textures[i], std::string{"textures[" + std::to_string(i) + "]"}.c_str());
+        }
         cache(locations.texture_opacity, "texture_opacity");
         cache(locations.light_direction, "light.direction");
         cache(locations.light_color, "light.color");
